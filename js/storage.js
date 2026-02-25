@@ -23,90 +23,73 @@ function saveState() {
 }
 
 /**
- * Carga el estado guardado desde localStorage y lo aplica a appState.
- * (Bug del loadState duplicado corregido — versión única y definitiva)
+ * Carga principal de datos de la aplicación (LocalStorage + Firestore).
+ * Unifica la antigua lógica de loadState y loadSettings para evitar conflictos.
  */
-function loadState() {
+async function loadAppData() {
     const saved = localStorage.getItem('taxiapp-state');
-    if (!saved) return;
+    let localData = null;
 
-    try {
-        const parsed = JSON.parse(saved);
-
-        appState.carreras = parsed.carreras || [];
-        appState.gastos = parsed.gastos || [];
-        appState.settings = parsed.settings || appState.settings;
-        appState.jornadaIniciada = typeof parsed.jornadaIniciada !== 'undefined'
-            ? parsed.jornadaIniciada : appState.jornadaIniciada;
-        appState.jornadaInicio = parsed.jornadaInicio
-            ? new Date(parsed.jornadaInicio) : appState.jornadaInicio;
-        appState.baseEfectivo = typeof parsed.baseEfectivo !== 'undefined'
-            ? parsed.baseEfectivo : 0;
-
-        const baseInput = document.getElementById('baseEfectivo');
-        if (baseInput) baseInput.value = appState.baseEfectivo || '';
-
-    } catch (e) {
-        console.warn('No se pudo cargar estado desde localStorage:', e);
-    }
-}
-
-/**
- * Carga la configuración inicial y restaura el estado visual de la jornada.
- * Si hay usuario autenticado, también carga desde Firestore.
- */
-async function loadSettings() {
-    const saved = localStorage.getItem('taxiapp-state');
     if (saved) {
         try {
-            const data = JSON.parse(saved);
+            localData = JSON.parse(saved);
 
-            if (data.carreras && Array.isArray(data.carreras)) {
-                data.carreras = data.carreras.map(carrera => ({
-                    ...carrera,
-                    timestamp: carrera.timestamp ? new Date(carrera.timestamp) : new Date()
+            // Rehidratar fechas y tipos
+            if (localData.carreras && Array.isArray(localData.carreras)) {
+                localData.carreras = localData.carreras.map(c => ({
+                    ...c,
+                    timestamp: c.timestamp ? new Date(c.timestamp) : new Date()
                 }));
             }
+            if (localData.jornadaInicio) localData.jornadaInicio = new Date(localData.jornadaInicio);
 
-            // Mezclar settings con cuidado para no perder plataformas por defecto
-            const mergedSettings = {
+            // Aplicar datos básicos al appState
+            appState.carreras = localData.carreras || [];
+            appState.gastos = localData.gastos || [];
+            appState.jornadaIniciada = !!localData.jornadaIniciada;
+            appState.jornadaInicio = localData.jornadaInicio || null;
+            appState.baseEfectivo = localData.baseEfectivo || 0;
+
+            // Fusionar settings (especialmente plataformas y meta)
+            appState.settings = {
                 ...appState.settings,
-                ...(data.settings || {})
+                ...(localData.settings || {})
             };
 
-            // Si las plataformas guardadas están vacías o no existen, restaurar las DEFAULT_PLATFORMS
-            if (!mergedSettings.plataformas || mergedSettings.plataformas.length === 0) {
-                mergedSettings.plataformas = JSON.parse(JSON.stringify(DEFAULT_PLATFORMS));
-            }
+            // Sincronizar campo de base en UI si existe
+            const baseInput = document.getElementById('baseEfectivo');
+            if (baseInput) baseInput.value = appState.baseEfectivo || '';
 
-            appState = {
-                ...appState,
-                ...data,
-                settings: mergedSettings,
-                jornadaInicio: data.jornadaInicio ? new Date(data.jornadaInicio) : null
-            };
-
-            if (elements.metaDisplay) {
-                elements.metaDisplay.textContent = formatCurrency(appState.settings.meta);
-            }
-
-            if (appState.jornadaIniciada && appState.jornadaInicio) {
-                elements.jornadaBtn.textContent = 'CERRAR JORNADA';
-                elements.jornadaBtn.classList.add('cierre');
-                elements.jornadaInfo.textContent = `Iniciado a las ${appState.jornadaInicio.toLocaleTimeString('es-ES', {
-                    hour: '2-digit', minute: '2-digit'
-                })}`;
-                elements.appContent.classList.remove('app-disabled');
-            }
         } catch (e) {
-            console.warn('No se pudo cargar configuración desde localStorage:', e);
+            console.warn('Error procesando localStorage:', e);
         }
     }
 
-    // Cargar desde Firestore (sobreescribe local si hay datos más recientes)
+    // CARGA DESDE FIRESTORE (Sobre escribe local si existe)
     if (typeof currentUser !== 'undefined' && currentUser) {
-        await loadSettingsFromFirestore();
-        await loadHistoricoFromFirestore();
+        try {
+            await loadSettingsFromFirestore();
+            await loadHistoricoFromFirestore();
+        } catch (e) {
+            console.warn('Fallo carga remota:', e);
+        }
     }
-}
 
+    // GARANTÍA: Si después de cargar local y remoto no hay plataformas, restaurar defaults
+    if (!appState.settings.plataformas || appState.settings.plataformas.length === 0) {
+        console.info('Restaurando plataformas por defecto...');
+        appState.settings.plataformas = JSON.parse(JSON.stringify(DEFAULT_PLATFORMS));
+    }
+
+    // Restaurar estado visual de la jornada iniciada
+    if (appState.jornadaIniciada && appState.jornadaInicio) {
+        elements.jornadaBtn.textContent = 'CERRAR JORNADA';
+        elements.jornadaBtn.classList.add('cierre');
+        elements.jornadaInfo.textContent = `Iniciado a las ${appState.jornadaInicio.toLocaleTimeString('es-ES', {
+            hour: '2-digit', minute: '2-digit'
+        })}`;
+        elements.appContent.classList.remove('app-disabled');
+    }
+
+    updateUI();
+}

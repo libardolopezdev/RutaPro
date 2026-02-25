@@ -17,22 +17,12 @@
  * Llamada desde auth.js → showApp().
  */
 async function initApp() {
-    await loadSettings();  // local primero, luego Firestore
-    loadState();
-
-    // PARCHE: Asegurar que COOPEBOMBAS tenga el nombre completo si quedó truncado como 'COOP'
-    if (appState.settings.plataformas) {
-        appState.settings.plataformas = appState.settings.plataformas.map(p => {
-            if (p.id === 'coop' && p.name === 'COOP') {
-                return { ...p, name: 'COOPEBOMBAS' };
-            }
-            return p;
-        });
-    }
+    // Carga unificada y robusta de Local y Firestore
+    await loadAppData();
 
     updateDate();
-    updateUI();
     setupEventListeners();
+
 
 
     if (appState.gastos && appState.gastos.length > 0) {
