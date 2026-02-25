@@ -68,9 +68,21 @@ async function loadSettings() {
                 }));
             }
 
+            // Mezclar settings con cuidado para no perder plataformas por defecto
+            const mergedSettings = {
+                ...appState.settings,
+                ...(data.settings || {})
+            };
+
+            // Si las plataformas guardadas están vacías o no existen, restaurar las DEFAULT_PLATFORMS
+            if (!mergedSettings.plataformas || mergedSettings.plataformas.length === 0) {
+                mergedSettings.plataformas = JSON.parse(JSON.stringify(DEFAULT_PLATFORMS));
+            }
+
             appState = {
                 ...appState,
                 ...data,
+                settings: mergedSettings,
                 jornadaInicio: data.jornadaInicio ? new Date(data.jornadaInicio) : null
             };
 
@@ -78,7 +90,7 @@ async function loadSettings() {
                 elements.metaDisplay.textContent = formatCurrency(appState.settings.meta);
             }
 
-            if (appState.jornadaIniciada) {
+            if (appState.jornadaIniciada && appState.jornadaInicio) {
                 elements.jornadaBtn.textContent = 'CERRAR JORNADA';
                 elements.jornadaBtn.classList.add('cierre');
                 elements.jornadaInfo.textContent = `Iniciado a las ${appState.jornadaInicio.toLocaleTimeString('es-ES', {
@@ -97,3 +109,4 @@ async function loadSettings() {
         await loadHistoricoFromFirestore();
     }
 }
+

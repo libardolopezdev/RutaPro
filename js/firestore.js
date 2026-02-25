@@ -171,6 +171,7 @@ async function saveSettingsToFirestore() {
     try {
         await settingsRef().set({
             meta: appState.settings.meta,
+            plataformas: appState.settings.plataformas || [],
             storageType: 'firebase',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -178,6 +179,7 @@ async function saveSettingsToFirestore() {
         console.error('Error guardando configuración en Firestore:', err);
     }
 }
+
 
 /**
  * Carga la configuración del usuario desde Firestore.
@@ -190,12 +192,19 @@ async function loadSettingsFromFirestore() {
         if (doc.exists) {
             const data = doc.data();
             appState.settings.meta = data.meta || appState.settings.meta;
+
+            if (data.plataformas && Array.isArray(data.plataformas) && data.plataformas.length > 0) {
+                appState.settings.plataformas = data.plataformas;
+            }
+
             elements.metaDisplay.textContent = formatCurrency(appState.settings.meta);
+            updateUI(); // Forzar redibujado de botones
         }
     } catch (err) {
         console.warn('Error cargando configuración desde Firestore:', err);
     }
 }
+
 
 // ─────────────────────────────────────────────
 //  Estado del indicador de conexión
