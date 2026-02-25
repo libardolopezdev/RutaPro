@@ -76,7 +76,6 @@ function setupEventListeners() {
     // --- Header ---
     document.getElementById('historicoBtn').addEventListener('click', openHistorico);
     document.getElementById('settingsBtn').addEventListener('click', openSettings);
-    document.getElementById('installBtn').addEventListener('click', mostrarInstruccionesInstalacion);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
 
     // --- Modal de configuración ---

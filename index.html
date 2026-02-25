@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RutaApp - Registro Diario</title>
     <meta name="description" content="Registra tus carreras, gastos y ganancias diarias como conductor de plataforma.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -73,23 +75,24 @@
                 <!-- Fila superior: íconos -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 
-                    <!-- Izquierda: instalar + estado de conexión -->
+                    <!-- Izquierda: estado de conexión -->
                     <div style="display: flex; gap: 8px; align-items: center;">
-                        <button id="installBtn" title="Instalar App" aria-label="Instalar App"
-                            style="background: rgba(255,255,255,0.25); border: none; color: white; padding: 8px;
-                               border-radius: 50%; cursor: pointer; font-size: 16px; backdrop-filter: blur(10px);">📱</button>
-                        <span id="connectionStatus" title="Sincronizado">☁️</span>
+                        <span id="connectionStatus" title="Sincronizado" style="font-size:18px;">☁️</span>
+                        <span id="userEmail"
+                            style="color: rgba(255,255,255,0.82); font-size:11px; font-weight:600;"></span>
                     </div>
 
-                    <!-- Derecha: usuario, histórico, config, logout -->
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <span id="userEmail" style="color: white;"></span>
-                        <button class="settings-btn" id="historicoBtn" aria-label="Histórico"
-                            style="position: relative; top: 0; right: 0; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);">📊</button>
-                        <button class="settings-btn" id="settingsBtn" aria-label="Configuración"
-                            style="position: relative; top: 0; right: 0; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);">⚙️</button>
-                        <button class="settings-btn" id="logoutBtn" aria-label="Cerrar sesión"
-                            style="position: relative; top: 0; right: 0; background: rgba(231,76,60,0.5); backdrop-filter: blur(10px);">🚪</button>
+                    <!-- Derecha: histórico, config, logout -->
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <button class="header-icon-btn" id="historicoBtn" aria-label="Histórico">
+                            <span class="ms">bar_chart</span>
+                        </button>
+                        <button class="header-icon-btn" id="settingsBtn" aria-label="Configuración">
+                            <span class="ms">settings</span>
+                        </button>
+                        <button class="header-icon-btn danger" id="logoutBtn" aria-label="Cerrar sesión">
+                            <span class="ms">logout</span>
+                        </button>
                     </div>
                 </div>
 
