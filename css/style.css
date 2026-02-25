@@ -1,0 +1,1002 @@
+/* ============================================================
+   RutaApp 2027 - Estilos Globales
+   Archivo: css/style.css
+   ============================================================ */
+
+/* --- Variables y Reset --- */
+:root {
+    --primary-color: #71b280;
+    --primary-dark: #134e5e;
+    --secondary-color: #5a9;
+    --danger-color: #e74c3c;
+    --warning-color: #f39c12;
+    --dark-color: #2c3e50;
+    --light-color: #f8f9fa;
+    --white-color: #fff;
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-family);
+    background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+    min-height: 100vh;
+    padding: 10px;
+}
+
+/* --- Contenedor principal --- */
+.container {
+    max-width: 400px;
+    margin: 0 auto;
+    background: #f0f7f4;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(19, 78, 94, 0.15);
+    overflow: hidden;
+}
+
+/* --- Header --- */
+.header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--white-color);
+    padding: 20px;
+    text-align: center;
+    position: relative;
+}
+
+.settings-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: var(--white-color);
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.cloud-status {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: var(--white-color);
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.cloud-status:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.1);
+}
+
+.cloud-status.connected {
+    background: rgba(76, 175, 80, 0.8);
+}
+
+.cloud-status.disconnected {
+    background: rgba(244, 67, 54, 0.8);
+}
+
+.date-display {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.meta-info {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 5px;
+}
+
+/* --- Histórico --- */
+.historico-btn {
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.historico-btn.active {
+    background: var(--primary-color);
+    color: var(--white-color);
+}
+
+.historico-item {
+    background: var(--white-color);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.historico-fecha {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.historico-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    font-size: 12px;
+}
+
+/* --- Control de Jornada --- */
+.jornada-control {
+    padding: 10px 15px;
+    background: #e8f5e8;
+    border-bottom: 1px solid #c8e6c9;
+    text-align: center;
+}
+
+.jornada-btn {
+    padding: 12px 24px;
+    background: var(--primary-color);
+    color: var(--white-color);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.jornada-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.jornada-btn.cierre {
+    background: var(--danger-color);
+}
+
+.jornada-btn.cierre:hover {
+    background: #d32f2f;
+}
+
+.jornada-info {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.app-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* --- Consolidados --- */
+.consolidados {
+    padding: 10px 15px;
+    background: var(--light-color);
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.consolidados-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.consolidado-item {
+    background: var(--white-color);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.consolidado-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.consolidado-label {
+    font-size: 11px;
+    color: #666;
+    margin-top: 3px;
+}
+
+/* --- Añadir Carrera --- */
+.quick-add {
+    padding: 15px;
+    background: var(--light-color);
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.amount-input {
+    width: 100%;
+    padding: 16px;
+    border: 3px solid var(--primary-color);
+    border-radius: 10px;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--dark-color);
+    margin-bottom: 10px;
+}
+
+/* --- Botones de Plataforma --- */
+.platform-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.platform-btn {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.platform-btn.uber {
+    background: #000000;
+    color: var(--white-color);
+}
+
+.platform-btn.didi {
+    background: #FF6B35;
+    color: var(--white-color);
+}
+
+.platform-btn.coop {
+    background: #2196F3;
+    color: var(--white-color);
+}
+
+.platform-btn.idriver {
+    background: #00BF63;
+    color: var(--white-color);
+}
+
+.platform-btn.mano {
+    background: #9C27B0;
+    color: var(--white-color);
+}
+
+/* --- Botones de Pago --- */
+.payment-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+    pointer-events: none;
+    transition: all 0.3s;
+}
+
+.payment-buttons.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.payment-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.payment-btn.efectivo {
+    background: #2ecc71;
+    color: var(--white-color);
+}
+
+.payment-btn.tarjeta {
+    background: #3498db;
+    color: var(--white-color);
+}
+
+.payment-btn.vale {
+    background: #f39c12;
+    color: var(--white-color);
+}
+
+.payment-btn.transferencia {
+    background: #9b59b6;
+    color: var(--white-color);
+}
+
+/* Hover y estado seleccionado */
+.platform-btn:hover,
+.payment-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.platform-btn.selected,
+.payment-btn.selected {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    border: 3px solid #FFD700;
+}
+
+/* --- Botón Agregar --- */
+.add-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--white-color);
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3);
+}
+
+.add-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* --- Resumen del Día --- */
+.summary {
+    padding: 20px;
+    background: var(--white-color);
+}
+
+.summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.carreras-count {
+    background: #e3f2fd;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #1976d2;
+    font-weight: bold;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 15px;
+    background: var(--light-color);
+    border-radius: 10px;
+}
+
+.summary-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.summary-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* --- Barra de Progreso --- */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), #8BC34A);
+    transition: width 0.3s ease;
+}
+
+.progress-fill-meta {
+    height: 100%;
+    transition: all 0.3s;
+    background: #f44336;
+}
+
+.progress-fill-meta.low {
+    background: #f44336;
+}
+
+.progress-fill-meta.medium-low {
+    background: #FF9800;
+}
+
+.progress-fill-meta.medium {
+    background: #FFC107;
+}
+
+.progress-fill-meta.high {
+    background: #8BC34A;
+}
+
+.progress-fill-meta.complete {
+    background: #4CAF50;
+}
+
+.progress-fill-meta.exceeded {
+    background: linear-gradient(90deg, #11998e, #38ef7d, #11998e);
+    background-size: 200% 100%;
+    animation: shine 2s ease-in-out infinite;
+}
+
+@keyframes shine {
+    0% {
+        background-position: 200% center;
+    }
+
+    100% {
+        background-position: -200% center;
+    }
+}
+
+/* --- Stats de Plataformas --- */
+.plataformas-stats {
+    margin: 15px 0;
+}
+
+.plataforma-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    background: var(--light-color);
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.plataforma-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.plataforma-badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    color: var(--white-color);
+}
+
+/* --- Lista de Carreras --- */
+.carreras-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.carrera-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    position: relative;
+}
+
+.carrera-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.carrera-platform {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    color: var(--white-color);
+}
+
+.carrera-payment {
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: bold;
+    background: #f0f0f0;
+    color: #666;
+}
+
+.delete-btn {
+    background: var(--danger-color);
+    color: var(--white-color);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Controles Finales --- */
+.final-controls {
+    padding: 20px;
+    background: #f0f0f0;
+    border-top: 1px solid #ddd;
+}
+
+.final-summary {
+    background: var(--white-color);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.final-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.final-row.total {
+    font-weight: bold;
+    font-size: 18px;
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+}
+
+.export-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.export-btn,
+.clear-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.export-btn {
+    background: var(--secondary-color);
+    color: var(--white-color);
+}
+
+.clear-btn {
+    background: var(--danger-color);
+    color: var(--white-color);
+}
+
+/* --- Modales --- */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--white-color);
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 350px;
+}
+
+.modal h3 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-btn.cancel {
+    background: #ccc;
+    color: #666;
+}
+
+.modal-btn.save {
+    background: var(--primary-color);
+    color: var(--white-color);
+}
+
+/* --- Opciones de Almacenamiento --- */
+.storage-options {
+    margin: 15px 0;
+    padding: 15px;
+    background: var(--light-color);
+    border-radius: 8px;
+}
+
+.storage-option {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.storage-option input {
+    margin-right: 8px;
+}
+
+.firebase-config {
+    display: none;
+    margin-top: 10px;
+}
+
+.firebase-config.active {
+    display: block;
+}
+
+/* --- Toast --- */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--dark-color);
+    color: var(--white-color);
+    padding: 12px 24px;
+    border-radius: 8px;
+    z-index: 1001;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.toast.success {
+    background: var(--primary-color);
+}
+
+.toast.error {
+    background: var(--danger-color);
+}
+
+/* --- Modal de Resumen --- */
+.resumen-modal {
+    background: var(--white-color);
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 450px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.resumen-header {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+.resumen-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--light-color);
+    border-radius: 8px;
+}
+
+.resumen-section h4 {
+    margin-bottom: 10px;
+    color: var(--dark-color);
+}
+
+.resumen-detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.resumen-detail.total {
+    font-weight: bold;
+    font-size: 16px;
+    border-top: 1px solid #ddd;
+    padding-top: 8px;
+    margin-top: 10px;
+}
+
+/* --- Accesibilidad --- */
+fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+legend {
+    padding: 0;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    clip: rect(1px, 1px, 1px, 1px);
+    padding: 0 !important;
+    border: 0 !important;
+    height: 1px !important;
+    width: 1px !important;
+    overflow: hidden;
+}
+
+/* --- Sección de Gastos --- */
+.gastos-section {
+    padding: 15px;
+    background: #fff3cd;
+    border-top: 1px solid #ffc107;
+    border-bottom: 1px solid #ffc107;
+}
+
+.gasto-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fffbea;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+/* ─── Pantalla de Login ─────────────────────────────────── */
+#loginScreen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+    color: white;
+    text-align: center;
+}
+
+.login-logo {
+    font-size: 52px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.login-title {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.login-subtitle {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 28px;
+}
+
+.login-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 15px;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: var(--font-family);
+}
+
+.login-input::placeholder {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.login-input:focus {
+    border-color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.login-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+}
+
+.login-btn.primary {
+    background: white;
+    color: #134e5e;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.login-btn.primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.login-btn.secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.login-btn.secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.login-btn.google {
+    background: white;
+    color: #444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.login-btn.google:hover:not(:disabled) {
+    background: #f5f5f5;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.login-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+
+.login-toggle {
+    margin-top: 16px;
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.login-toggle a {
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.auth-error {
+    background: rgba(231, 76, 60, 0.85);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    text-align: left;
+    min-height: 0;
+    transition: all 0.2s;
+}
+
+/* ─── Indicador de conexión en el header ────────────────── */
+#connectionStatus {
+    font-size: 18px;
+    line-height: 1;
+    cursor: default;
+    transition: all 0.3s;
+}
+
+#connectionStatus.offline {
+    filter: grayscale(1);
+    opacity: 0.6;
+}
+
+/* ─── Info de usuario en header ─────────────────────────── */
+#userEmail {
+    font-size: 11px;
+    opacity: 0.8;
+    font-weight: 500;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+}
