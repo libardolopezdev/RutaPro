@@ -1,6 +1,7 @@
 /**
  * ui.js — Funciones de actualización de la interfaz
  * RutaApp 2027
+ * @author Libardo Lopez
  */
 
 /** Actualiza el texto de la fecha en el header. */
@@ -16,6 +17,7 @@ function updateDate() {
 
 /** Orquesta todas las actualizaciones de UI en cascada. */
 function updateUI() {
+    renderPlatformButtons();
     updateMetaProgress();
     updateConsolidados();
     updateGananciasEfectivoDigital();
@@ -23,6 +25,43 @@ function updateUI() {
     updateCarrerasList();
     updateFinalSummary();
 }
+
+/**
+ * Genera los botones de plataforma de forma dinámica a partir de
+ * appState.settings.plataformas, respetando el seleccionado actual.
+ */
+function renderPlatformButtons() {
+    const container = elements.platformButtonsContainer;
+    if (!container) return;
+
+    container.innerHTML = '';
+    const plataformas = appState.settings.plataformas || [];
+
+    plataformas.forEach(plat => {
+        const btn = document.createElement('button');
+        btn.className = `platform-btn ${plat.id}`;
+        btn.dataset.platform = plat.id;
+        btn.textContent = plat.name || plat.id.toUpperCase();
+        btn.style.backgroundColor = plat.color;
+        btn.style.color = '#ffffff';
+
+        // Glow de color según la plataforma
+        btn.style.boxShadow = `0 3px 10px ${plat.color}66`;
+
+
+
+        // Restaurar selected si aplica
+        if (appState.selectedPlatform === plat.id) {
+            btn.classList.add('selected');
+            btn.style.boxShadow = `0 6px 20px ${plat.color}99, 0 0 0 3px ${plat.color}44`;
+        }
+
+        btn.addEventListener('click', () => selectPlatform(plat.id));
+        container.appendChild(btn);
+    });
+}
+
+
 
 /** Actualiza la barra de progreso y el estado de la meta en el header. */
 function updateMetaProgress() {
@@ -42,11 +81,16 @@ function updateMetaProgress() {
     // Resetear clase de color
     elements.progressFillMeta.className = 'progress-fill-meta';
 
+    // Badge de "Faltan" destacado
+    const faltaBadge = document.getElementById('faltaBadge');
+    const faltaBadgeValor = document.getElementById('faltaBadgeValor');
+
     if (porcentaje >= 100) {
         elements.progressFillMeta.classList.add('exceeded');
-        elements.metaStatus.innerHTML = '¡Meta superada! 🎉';
         elements.excedenteDisplay.style.display = 'block';
         elements.excedenteValor.textContent = formatCurrency(excedente);
+        // Ocultar badge "Faltan" cuando meta está cumplida
+        if (faltaBadge) faltaBadge.style.display = 'none';
     } else {
         elements.excedenteDisplay.style.display = 'none';
 
@@ -55,10 +99,13 @@ function updateMetaProgress() {
         else if (porcentaje >= 31) elements.progressFillMeta.classList.add('medium-low');
         else elements.progressFillMeta.classList.add('low');
 
-        elements.metaStatus.innerHTML =
-            'Faltan: <span id="faltaMetaHeader">' + formatCurrency(falta) + '</span>';
+
+        // Actualizar badge prominente
+        if (faltaBadge) faltaBadge.style.display = 'inline-block';
+        if (faltaBadgeValor) faltaBadgeValor.textContent = formatCurrency(falta);
     }
 }
+
 
 /** Actualiza el consolidado Total Neto. */
 function updateConsolidados() {
@@ -127,8 +174,8 @@ function updateSummary() {
 
     elements.carrerasCount.textContent = `${totalCarreras} carrera${totalCarreras !== 1 ? 's' : ''}`;
     elements.totalBruto.textContent = formatCurrency(totalBruto);
-    elements.faltaMeta.textContent = formatCurrency(faltaMeta);
     elements.progressFill.style.width = `${progressPercent}%`;
+
 
     updatePlataformasStats();
 }

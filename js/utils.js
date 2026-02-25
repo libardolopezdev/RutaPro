@@ -1,6 +1,7 @@
 /**
  * utils.js — Funciones utilitarias globales
  * RutaApp 2027
+ * @author Libardo Lopez
  */
 
 /**
@@ -17,19 +18,13 @@ function formatCurrency(amount) {
 }
 
 /**
- * Devuelve el color hexadecimal de cada plataforma.
+ * Devuelve el color hexadecimal de cada plataforma buscando en appState.
  * @param {string} platform
  * @returns {string}
  */
 function getPlatformColor(platform) {
-    const colors = {
-        uber: '#000',
-        didi: '#ff6b35',
-        coop: '#2196F3',
-        idriver: '#00BF63',
-        mano: '#9C27B0'
-    };
-    return colors[platform] || '#666';
+    const plat = (appState.settings.plataformas || []).find(p => p.id === platform);
+    return plat ? plat.color : '#666';
 }
 
 /**

@@ -1,6 +1,7 @@
 /**
  * storage.js — Persistencia dual: localStorage + Firestore
  * RutaApp 2027
+ * @author Libardo Lopez
  */
 
 /**

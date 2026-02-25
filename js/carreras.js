@@ -1,18 +1,17 @@
 /**
  * carreras.js — Lógica de carreras y control de jornada
  * RutaApp 2027
+ * @author Libardo Lopez
  */
 
 /** Activa/desactiva la jornada laboral. */
 function toggleJornada() {
     if (!appState.jornadaIniciada) {
-        // Limpiar datos de la jornada anterior
         appState.carreras = [];
         appState.gastos = [];
         updateGastos();
         updateUI();
 
-        // Iniciar nueva jornada
         appState.jornadaIniciada = true;
         appState.jornadaInicio = new Date();
 
@@ -26,7 +25,6 @@ function toggleJornada() {
         showToast('Jornada iniciada correctamente', 'success');
         saveState();
 
-        // Scroll y focus automático al campo de valor
         setTimeout(() => {
             elements.amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             elements.amountInput.focus();
@@ -44,8 +42,9 @@ function toggleJornada() {
 function selectPlatform(platform) {
     appState.selectedPlatform = platform;
 
-    elements.platformButtons.forEach(btn => btn.classList.remove('selected'));
-    document.querySelector(`[data-platform="${platform}"]`).classList.add('selected');
+    document.querySelectorAll('.platform-btn').forEach(btn => btn.classList.remove('selected'));
+    const btn = document.querySelector(`[data-platform="${platform}"]`);
+    if (btn) btn.classList.add('selected');
     elements.paymentButtons.classList.add('active');
 
     validateForm();
@@ -64,16 +63,25 @@ function selectPayment(payment) {
     validateForm();
 }
 
+/**
+ * Parsea el valor del input formateado (con puntos de miles) a número puro.
+ * @returns {number}
+ */
+function getAmountValue() {
+    const raw = elements.amountInput.value.replace(/\./g, '').replace(/,/g, '');
+    return parseFloat(raw) || 0;
+}
+
 /** Habilita o deshabilita el botón "AGREGAR CARRERA" según el formulario. */
 function validateForm() {
-    const amount = parseFloat(elements.amountInput.value);
+    const amount = getAmountValue();
     const isValid = amount > 0 && appState.selectedPlatform && appState.selectedPayment;
     elements.addCarrera.disabled = !isValid;
 }
 
 /** Agrega una nueva carrera al estado y actualiza la UI. */
 function addCarrera() {
-    const amount = parseFloat(elements.amountInput.value);
+    const amount = getAmountValue();
     const carrera = {
         id: Date.now(),
         timestamp: new Date(),
@@ -139,36 +147,18 @@ function clearAll() {
     }
 }
 
-/** Muestra instrucciones de instalación como PWA según el dispositivo del usuario. */
-function mostrarInstruccionesInstalacion() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isAndroid = /Android/.test(navigator.userAgent);
+/**
+ * Formatea el valor del input de monto con separador de miles (punto).
+ * Se llama en el evento 'input' del campo amountInput.
+ */
+function formatAmountInput() {
+    const input = elements.amountInput;
+    // Eliminar todo excepto dígitos
+    const digits = input.value.replace(/\D/g, '');
+    if (!digits) { input.value = ''; validateForm(); return; }
 
-    let mensaje = '';
-    if (isIOS) {
-        mensaje = `📱 INSTALAR EN IPHONE/IPAD:\n\n1. Toca el botón "Compartir" 📤\n   (abajo en el centro)\n\n2. Selecciona "Añadir a pantalla de inicio" ➕\n\n3. Toca "Añadir"\n\n¡La app aparecerá en tu pantalla de inicio! 🎉`;
-    } else if (isAndroid) {
-        mensaje = `📱 INSTALAR EN ANDROID:\n\n1. Toca el menú (⋮) arriba a la derecha\n\n2. Selecciona "Añadir a pantalla de inicio"\n   o "Instalar app"\n\n3. Confirma\n\n¡La app aparecerá en tu pantalla de inicio! 🎉`;
-    } else {
-        mensaje = `💻 INSTALAR EN ESCRITORIO:\n\n1. Busca el ícono ➕ o ⬇️\n   en la barra de direcciones\n\n2. Haz clic en "Instalar"\n\n¡La app se abrirá como programa! 🎉`;
-    }
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); display: flex; align-items: center;
-        justify-content: center; z-index: 10000;
-    `;
-    modal.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 15px; max-width: 350px; margin: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <h3 style="margin-bottom: 20px; color: #134e5e; text-align: center;">📲 Instalar RutaApp</h3>
-            <pre style="white-space: pre-wrap; font-family: var(--font-family); font-size: 14px; line-height: 1.6; color: #333;">${mensaje}</pre>
-            <button onclick="this.parentElement.parentElement.remove()"
-                style="width: 100%; padding: 12px; background: #71b280; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px;">
-                Entendido
-            </button>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    // Formatear con punto como separador de miles
+    const formatted = parseInt(digits, 10).toLocaleString('es-CO');
+    input.value = formatted;
+    validateForm();
 }

@@ -1,7 +1,20 @@
 /**
  * state.js — Estado global de la aplicación
  * RutaApp 2027
+ * @author Libardo Lopez
  */
+
+/**
+ * Plataformas por defecto con colores corporativos.
+ * El usuario puede añadir/eliminar plataformas desde Configuración.
+ */
+const DEFAULT_PLATFORMS = [
+    { id: 'uber', name: 'UBER', color: '#000000' },
+    { id: 'didi', name: 'DIDI', color: '#FF6B35' },
+    { id: 'coop', name: 'COOPEBOMBAS', color: '#1976D2' },
+    { id: 'idriver', name: 'IDRIVER', color: '#00BF63' },
+    { id: 'mano', name: 'MANO', color: '#7C3AED' },
+];
 
 /**
  * Estado principal de la aplicación.
@@ -17,7 +30,8 @@ let appState = {
     baseEfectivo: 0,
     settings: {
         meta: 270000,
-        storageType: 'local'
+        storageType: 'local',
+        plataformas: JSON.parse(JSON.stringify(DEFAULT_PLATFORMS))
     }
 };
 
@@ -40,9 +54,8 @@ const elements = {
     alcanzadoDisplay: document.getElementById('alcanzadoDisplay'),
     porcentajeDisplay: document.getElementById('porcentajeDisplay'),
     progressFillMeta: document.getElementById('progressFillMeta'),
-    metaStatus: document.getElementById('metaStatus'),
-    faltaMetaHeader: document.getElementById('faltaMetaHeader'),
     excedenteDisplay: document.getElementById('excedenteDisplay'),
+
     excedenteValor: document.getElementById('excedenteValor'),
     gananciaEfectivo: document.getElementById('gananciaEfectivo'),
     gananciaDigital: document.getElementById('gananciaDigital'),
@@ -55,14 +68,14 @@ const elements = {
     jornadaInfo: document.getElementById('jornadaInfo'),
     appContent: document.getElementById('appContent'),
     amountInput: document.getElementById('amountInput'),
-    platformButtons: document.querySelectorAll('.platform-btn'),
+    platformButtonsContainer: document.getElementById('platformButtonsContainer'),
     paymentButtons: document.getElementById('paymentButtons'),
     addCarrera: document.getElementById('addCarrera'),
     consolidadoNeto: document.getElementById('consolidadoNeto'),
     carrerasCount: document.getElementById('carrerasCount'),
     totalBruto: document.getElementById('totalBruto'),
-    faltaMeta: document.getElementById('faltaMeta'),
     progressFill: document.getElementById('progressFill'),
+
     plataformasStats: document.getElementById('plataformasStats'),
     carrerasList: document.getElementById('carrerasList'),
     finalBruto: document.getElementById('finalBruto'),

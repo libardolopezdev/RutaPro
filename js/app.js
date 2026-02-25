@@ -1,6 +1,7 @@
 /**
  * app.js — Inicialización y registro de eventos
  * RutaApp 2027
+ * @author Libardo Lopez
  *
  * El arranque real ocurre en auth.js → onAuthStateChanged → initApp()
  * Este archivo expone initApp() y setupEventListeners().
@@ -18,9 +19,21 @@
 async function initApp() {
     await loadSettings();  // local primero, luego Firestore
     loadState();
+
+    // PARCHE: Asegurar que COOPEBOMBAS tenga el nombre completo si quedó truncado como 'COOP'
+    if (appState.settings.plataformas) {
+        appState.settings.plataformas = appState.settings.plataformas.map(p => {
+            if (p.id === 'coop' && p.name === 'COOP') {
+                return { ...p, name: 'COOPEBOMBAS' };
+            }
+            return p;
+        });
+    }
+
     updateDate();
     updateUI();
     setupEventListeners();
+
 
     if (appState.gastos && appState.gastos.length > 0) {
         updateGastos();
@@ -50,18 +63,15 @@ function setupEventListeners() {
     // --- Jornada ---
     elements.jornadaBtn.addEventListener('click', toggleJornada);
 
-    // --- Plataformas ---
-    elements.platformButtons.forEach(btn => {
-        btn.addEventListener('click', () => selectPlatform(btn.dataset.platform));
-    });
+    // --- Botones de plataforma: se generan dinámicamente en renderPlatformButtons() ---
 
     // --- Métodos de pago ---
     document.querySelectorAll('.payment-btn').forEach(btn => {
         btn.addEventListener('click', () => selectPayment(btn.dataset.payment));
     });
 
-    // --- Formulario de carrera ---
-    elements.amountInput.addEventListener('input', validateForm);
+    // --- Formulario de carrera: formato de miles + validación ---
+    elements.amountInput.addEventListener('input', formatAmountInput);
     elements.addCarrera.addEventListener('click', addCarrera);
 
     // --- Formulario de gasto ---
@@ -111,3 +121,6 @@ window.filterHistorico = filterHistorico;
 window.aplicarRangoFechas = aplicarRangoFechas;
 window.compartirHistorico = compartirHistorico;
 window.compartirResumen = compartirResumen;
+window.addPlatform = addPlatform;
+window.removePlatform = removePlatform;
+window.updatePlatformColor = updatePlatformColor;

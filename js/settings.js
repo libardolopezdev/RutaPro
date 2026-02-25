@@ -1,11 +1,13 @@
 /**
  * settings.js — Configuración, resumen final y compartir
  * RutaApp 2027
+ * @author Libardo Lopez
  */
 
 /** Abre el modal de configuración con los valores actuales. */
 function openSettings() {
     document.getElementById('metaInput').value = appState.settings.meta;
+    renderPlatformManager();
     elements.settingsModal.style.display = 'block';
 }
 
@@ -19,7 +21,6 @@ async function saveSettings() {
     closeSettings();
     saveState();
 
-    // También guardar en Firestore
     if (typeof saveSettingsToFirestore === 'function') {
         await saveSettingsToFirestore();
     }
@@ -31,6 +32,113 @@ async function saveSettings() {
 function closeSettings() {
     elements.settingsModal.style.display = 'none';
 }
+
+/* ─── GESTIÓN DE PLATAFORMAS ─────────────────────────────── */
+
+/**
+ * Renderiza la lista de plataformas activas en el panel de configuración,
+ * con botones de eliminar para cada una.
+ */
+function renderPlatformManager() {
+    const container = document.getElementById('platformManagerList');
+    if (!container) return;
+
+    const plataformas = appState.settings.plataformas || [];
+    container.innerHTML = '';
+
+    plataformas.forEach((plat, idx) => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 10px; background: #f8f9fb;
+            border-radius: 10px; margin-bottom: 6px;
+            border: 1px solid #e5e7eb;
+        `;
+        item.innerHTML = `
+            <span style="
+                flex: 1; font-size: 13px; font-weight: 700;
+                color: white; background: ${plat.color};
+                padding: 4px 12px; border-radius: 999px;
+                box-shadow: 0 2px 6px ${plat.color}55;
+            ">${plat.name}</span>
+            <input type="color" value="${plat.color}"
+                title="Color de ${plat.name}"
+                onchange="updatePlatformColor('${plat.id}', this.value)"
+                style="width:32px; height:32px; border:none; border-radius:8px;
+                       cursor:pointer; padding:2px; background:none;">
+            <button onclick="removePlatform('${plat.id}')"
+                style="background:#fef2f2; color: #ef4444; border: 1.5px solid #fecaca;
+                       border-radius: 8px; padding: 5px 10px; cursor: pointer;
+                       font-size: 16px; font-weight: bold; line-height:1;">×</button>
+        `;
+        container.appendChild(item);
+    });
+
+    if (!plataformas.length) {
+        container.innerHTML = '<p style="font-size:12px;color:#9ca3af;text-align:center;padding:8px;">Sin plataformas. Agrega una abajo.</p>';
+    }
+}
+
+/**
+ * Agrega una nueva plataforma con nombre y color.
+ * El ID se genera en minúsculas a partir del nombre.
+ */
+function addPlatform() {
+    const nameInput = document.getElementById('newPlatformName');
+    const colorInput = document.getElementById('newPlatformColor');
+
+    const name = nameInput.value.trim().toUpperCase();
+    const color = colorInput.value;
+
+    if (!name) { showToast('Escribe el nombre de la plataforma', 'error'); return; }
+
+    const id = name.toLowerCase().replace(/\s+/g, '_');
+    const exists = (appState.settings.plataformas || []).some(p => p.id === id);
+    if (exists) { showToast('Esa plataforma ya existe', 'error'); return; }
+
+    appState.settings.plataformas = appState.settings.plataformas || [];
+    appState.settings.plataformas.push({ id, name, color });
+
+    nameInput.value = '';
+    colorInput.value = '#71b280';
+
+    renderPlatformManager();
+    renderPlatformButtons();
+    saveState();
+    if (typeof saveSettingsToFirestore === 'function') saveSettingsToFirestore();
+    showToast(`Plataforma ${name} agregada`, 'success');
+}
+
+/**
+ * Elimina una plataforma por ID.
+ * @param {string} id
+ */
+function removePlatform(id) {
+    if (!confirm('¿Eliminar esta plataforma?')) return;
+    appState.settings.plataformas = (appState.settings.plataformas || []).filter(p => p.id !== id);
+    renderPlatformManager();
+    renderPlatformButtons();
+    saveState();
+    if (typeof saveSettingsToFirestore === 'function') saveSettingsToFirestore();
+    showToast('Plataforma eliminada', 'success');
+}
+
+/**
+ * Actualiza en tiempo real el color de una plataforma.
+ * @param {string} id
+ * @param {string} color
+ */
+function updatePlatformColor(id, color) {
+    const plat = (appState.settings.plataformas || []).find(p => p.id === id);
+    if (plat) {
+        plat.color = color;
+        renderPlatformManager();
+        renderPlatformButtons();
+        saveState();
+    }
+}
+
+/* ─── RESUMEN FINAL ──────────────────────────────────────── */
 
 /**
  * Muestra el modal de resumen final de jornada.
@@ -50,7 +158,6 @@ async function showResumenFinal() {
         ? Math.round((ahora - appState.jornadaInicio) / (1000 * 60 * 60) * 100) / 100
         : 0;
 
-    // Estadísticas por plataforma
     const stats = {};
     appState.carreras.forEach(carrera => {
         if (!stats[carrera.platform]) {
@@ -75,9 +182,10 @@ async function showResumenFinal() {
 
     let plataformasHtml = '';
     Object.entries(stats).forEach(([platform, data]) => {
+        const color = getPlatformColor(platform);
         plataformasHtml += `
-            <div style="background: var(--light-color); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                <div class="resumen-detail" style="font-weight: bold; color: ${getPlatformColor(platform)};">
+            <div style="background: var(--bg); padding: 10px; border-radius: 10px; margin-bottom: 8px;">
+                <div class="resumen-detail" style="font-weight: bold; color: ${color};">
                     <span>${platform.toUpperCase()}:</span>
                     <span>${data.count} carreras — ${formatCurrency(data.total)}</span>
                 </div>
@@ -93,31 +201,20 @@ async function showResumenFinal() {
     const plataElm = document.getElementById('resumenPlataformas');
     if (plataElm) plataElm.innerHTML = plataformasHtml;
 
-    // 1. Guardar en histórico local
     const historicoItem = {
         fecha: ahora.toISOString(),
         totalCarreras: appState.carreras.length,
-        totalBruto,
-        totalNeto,
-        ganancia: gananciaFinal,
-        duracion,
+        totalBruto, totalNeto,
+        ganancia: gananciaFinal, duracion,
         plataformas: stats,
         carreras: appState.carreras
     };
     historicoData.push(historicoItem);
     localStorage.setItem('taxiapp-historico', JSON.stringify(historicoData));
 
-    // 2. Guardar en Firestore histórico
-    if (typeof saveHistoricoToFirestore === 'function') {
-        await saveHistoricoToFirestore(historicoItem);
-    }
+    if (typeof saveHistoricoToFirestore === 'function') await saveHistoricoToFirestore(historicoItem);
+    if (typeof clearJornadaInFirestore === 'function') await clearJornadaInFirestore();
 
-    // 3. Limpiar jornada activa en Firestore
-    if (typeof clearJornadaInFirestore === 'function') {
-        await clearJornadaInFirestore();
-    }
-
-    // Mostrar el modal
     elements.resumenModal.style.display = 'block';
     window.history.pushState({ modal: 'resumen' }, '');
     window.onpopstate = function () {
@@ -216,10 +313,6 @@ function compartirResumen() {
     }
 }
 
-/**
- * Fallback: copia al portapapeles o muestra alert.
- * @param {string} texto
- */
 function fallbackShare(texto) {
     if (navigator.clipboard) {
         navigator.clipboard.writeText(texto)

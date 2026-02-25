@@ -2,6 +2,7 @@
    RutaApp 2027 — Design System v2.0
    Premium redesign: Inter · Elevated cards · Pill buttons
    Micro-animations · Material Symbols · Modern inputs
+   @author Libardo Lopez
    ============================================================ */
 
 /* --- Google Fonts: Inter + Material Symbols --- */
@@ -97,7 +98,9 @@ body {
     padding: 12px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
+
 
 /* --- Material Symbols helper --- */
 .ms {
@@ -462,18 +465,26 @@ body {
 }
 
 .platform-btn {
-    padding: 11px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 48px;
+    padding: 8px 4px;
     border: 2px solid transparent;
     border-radius: var(--r-md);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     font-family: var(--font);
     transition: all var(--t-normal) var(--ease);
     position: relative;
     overflow: hidden;
+    white-space: normal;
+    line-height: 1.2;
 }
+
 
 .platform-btn::after {
     content: '';
