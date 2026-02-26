@@ -16,6 +16,10 @@ let currentUser = null;
  * Es el punto de arranque real de la aplicación.
  */
 auth.onAuthStateChanged(user => {
+    // Ocultar splascreen de carga inicial
+    const splash = document.getElementById('splashScreen');
+    if (splash) splash.style.display = 'none';
+
     if (user) {
         currentUser = user;
         showApp(user);
@@ -57,6 +61,10 @@ function showLogin() {
 async function showApp(user) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
+
+    // Si llegamos aquí desde login, ocultar splash por si acaso
+    const splash = document.getElementById('splashScreen');
+    if (splash) splash.style.display = 'none';
 
     // Mostrar email del usuario en el header
     const userEmailEl = document.getElementById('userEmail');

@@ -1,0 +1,21 @@
+{
+  "name": "RutaPro 2027",
+  "short_name": "RutaPro",
+  "description": "Control de jornadas para conductores de plataforma",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#134e5e",
+  "theme_color": "#134e5e",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063822.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3063/3063822.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

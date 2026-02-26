@@ -68,8 +68,11 @@ async function loadAppData() {
     // CARGA DESDE FIRESTORE (Sobre escribe local si existe)
     if (typeof currentUser !== 'undefined' && currentUser) {
         try {
-            await loadSettingsFromFirestore();
-            await loadHistoricoFromFirestore();
+            // Carga en paralelo para mejorar el tiempo de inicio
+            await Promise.all([
+                loadSettingsFromFirestore().catch(e => console.warn('Error settings remoto:', e)),
+                loadHistoricoFromFirestore().catch(e => console.warn('Error historico remoto:', e))
+            ]);
         } catch (e) {
             console.warn('Fallo carga remota:', e);
         }
