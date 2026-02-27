@@ -10,7 +10,8 @@ const ASSETS = [
     './js/storage.js',
     './js/ui.js',
     './js/utils.js',
-    './manifest.json'
+    './manifest.json',
+    './icons/logo.jpg'
 ];
 
 self.addEventListener('install', event => {
