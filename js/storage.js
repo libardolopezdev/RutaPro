@@ -85,14 +85,5 @@ async function loadAppData() {
     }
 
     // Restaurar estado visual de la jornada iniciada
-    if (appState.jornadaIniciada && appState.jornadaInicio) {
-        elements.jornadaBtn.textContent = 'CERRAR JORNADA';
-        elements.jornadaBtn.classList.add('cierre');
-        elements.jornadaInfo.textContent = `Iniciado a las ${appState.jornadaInicio.toLocaleTimeString('es-ES', {
-            hour: '2-digit', minute: '2-digit'
-        })}`;
-        elements.appContent.classList.remove('app-disabled');
-    }
-
     updateUI();
 }

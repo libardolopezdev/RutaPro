@@ -15,13 +15,7 @@ function toggleJornada() {
         appState.jornadaIniciada = true;
         appState.jornadaInicio = new Date();
 
-        elements.jornadaBtn.textContent = 'CERRAR JORNADA';
-        elements.jornadaBtn.classList.add('cierre');
-        elements.jornadaInfo.textContent = `Iniciado a las ${appState.jornadaInicio.toLocaleTimeString('es-ES', {
-            hour: '2-digit', minute: '2-digit'
-        })}`;
-        elements.appContent.classList.remove('app-disabled');
-
+        updateUI();
         showToast('Jornada iniciada correctamente', 'success');
         saveState();
 
@@ -133,11 +127,6 @@ function clearAll() {
         appState.jornadaIniciada = false;
         appState.jornadaInicio = null;
         appState.gastos = [];
-
-        elements.jornadaBtn.textContent = 'INICIAR JORNADA';
-        elements.jornadaBtn.classList.remove('cierre');
-        elements.jornadaInfo.textContent = 'Presiona para comenzar tu día de trabajo';
-        elements.appContent.classList.add('app-disabled');
 
         resetForm();
         updateUI();

@@ -17,6 +17,7 @@ function updateDate() {
 
 /** Orquesta todas las actualizaciones de UI en cascada. */
 function updateUI() {
+    updateJornadaUI();
     renderPlatformButtons();
     updateMetaProgress();
     updateConsolidados();
@@ -24,6 +25,26 @@ function updateUI() {
     updateSummary();
     updateCarrerasList();
     updateFinalSummary();
+}
+
+/** Sincroniza el botón de jornada y el estado habilitado de la app. */
+function updateJornadaUI() {
+    if (appState.jornadaIniciada && appState.jornadaInicio) {
+        let startTime = appState.jornadaInicio;
+        if (typeof startTime === 'string') startTime = new Date(startTime);
+
+        elements.jornadaBtn.textContent = 'CERRAR JORNADA';
+        elements.jornadaBtn.classList.add('cierre');
+        elements.jornadaInfo.textContent = `Iniciado a las ${startTime.toLocaleTimeString('es-ES', {
+            hour: '2-digit', minute: '2-digit'
+        })}`;
+        elements.appContent.classList.remove('app-disabled');
+    } else {
+        elements.jornadaBtn.textContent = 'INICIAR JORNADA';
+        elements.jornadaBtn.classList.remove('cierre');
+        elements.jornadaInfo.textContent = 'Presiona para comenzar tu día de trabajo';
+        elements.appContent.classList.add('app-disabled');
+    }
 }
 
 /**

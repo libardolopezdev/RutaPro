@@ -60,15 +60,18 @@ function syncJornadaActiva() {
             remoteCarreras.length !== appState.carreras.length ||
             remoteGastos.length !== appState.gastos.length;
 
-        if (hasNewData) {
+        if (hasNewData || (data.jornadaIniciada !== appState.jornadaIniciada)) {
             appState.carreras = remoteCarreras.map(c => ({
                 ...c,
                 timestamp: c.timestamp ? new Date(c.timestamp) : new Date()
             }));
             appState.gastos = remoteGastos;
+            appState.jornadaIniciada = !!data.jornadaIniciada;
 
-            if (data.jornadaInicio && !appState.jornadaInicio) {
+            if (data.jornadaInicio) {
                 appState.jornadaInicio = new Date(data.jornadaInicio);
+            } else {
+                appState.jornadaInicio = null;
             }
 
             updateGastos();
