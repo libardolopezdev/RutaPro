@@ -8,7 +8,7 @@
  * Plataformas por defecto con colores corporativos.
  * El usuario puede añadir/eliminar plataformas desde Configuración.
  */
-const DEFAULT_PLATFORMS = [
+var DEFAULT_PLATFORMS = [
     { id: 'uber', name: 'UBER', color: '#000000' },
     { id: 'didi', name: 'DIDI', color: '#FF6B35' },
     { id: 'coop', name: 'COOPEBOMBAS', color: '#1976D2' },
@@ -20,7 +20,7 @@ const DEFAULT_PLATFORMS = [
  * Estado principal de la aplicación.
  * Toda la lógica lee y escribe desde aquí.
  */
-let appState = {
+window.appState = {
     jornadaIniciada: false,
     jornadaInicio: null,
     carreras: [],
@@ -39,16 +39,16 @@ let appState = {
  * Datos del histórico de jornadas.
  * Se inicializa leyendo desde localStorage.
  */
-let historicoData = JSON.parse(localStorage.getItem('taxiapp-historico') || '[]');
+var historicoData = JSON.parse(localStorage.getItem('taxiapp-historico') || '[]');
 
 /** Filtro activo en la vista de histórico ('dia', 'semana', 'mes', 'ano', 'rango') */
-let historicoFilter = 'dia';
+var historicoFilter = 'dia';
 
 /**
  * Cache de referencias al DOM.
  * Se populan en app.js después del DOMContentLoaded.
  */
-const elements = {
+var elements = {
     currentDate: document.getElementById('currentDate'),
     metaDisplay: document.getElementById('metaDisplay'),
     alcanzadoDisplay: document.getElementById('alcanzadoDisplay'),
