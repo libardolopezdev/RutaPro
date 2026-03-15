@@ -1,17 +1,26 @@
-const CACHE_NAME = 'rutapro-v1';
+const CACHE_NAME = 'rutapro-v10';
 const ASSETS = [
     './',
     './index.html',
     './css/style.css',
-    './js/app.js',
-    './js/auth.js',
-    './js/firebase-config.js',
-    './js/firestore.js',
-    './js/storage.js',
-    './js/ui.js',
-    './js/utils.js',
+    './src/main.js',
+    './src/services/firebase-init.js',
+    './src/state/store.js',
+    './src/services/storageService.js',
+    './src/services/firestoreService.js',
+    './src/ui/renderer.js',
+    './src/modules/auth/authModule.js',
+    './src/modules/carreras/carrerasModule.js',
+    './src/modules/gastos/gastosModule.js',
+    './src/modules/historico/historicoModule.js',
+    './src/modules/settings/settingsModule.js',
+    './src/utils/format.js',
+    './src/utils/ui-utils.js',
     './manifest.json',
-    './icons/logo.jpg'
+    './icons/logo.jpg',
+    './icons/favicon.png',
+    './icons/icon-192.png',
+    './icons/icon-512.png'
 ];
 
 self.addEventListener('install', event => {
