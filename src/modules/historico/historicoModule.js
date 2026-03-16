@@ -4,6 +4,7 @@
 import { store } from '../../state/store.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { storageService } from '../../services/storageService.js';
+import { formatCurrency } from '../../utils/format.js';
 
 export const historicoModule = {
     async open() {
@@ -35,8 +36,8 @@ export const historicoModule = {
                 <div class="historico-fecha">${new Date(item.fecha).toLocaleDateString('es-ES')}</div>
                 <div class="historico-stats">
                     <div><strong>${item.totalCarreras}</strong><br>Carreras</div>
-                    <div><strong>${item.totalBruto}</strong><br>Bruto</div>
-                    <div><strong>${item.ganancia}</strong><br>Ganancia</div>
+                    <div><strong>${formatCurrency(item.totalBruto)}</strong><br>Bruto</div>
+                    <div><strong>${formatCurrency(item.ganancia)}</strong><br>Neto</div>
                 </div>
             </div>
         `).join('');
