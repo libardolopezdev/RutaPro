@@ -129,10 +129,12 @@ function setupEventListeners() {
             const target = closeBtn.dataset.close;
             if (target === 'settings') settingsModule.close();
             if (target === 'historico') historicoModule.close();
+            if (target === 'summary') document.getElementById('summaryModal').style.display = 'none';
         }
     });
 
     bind('logoutBtn', 'click', () => authModule.logout());
+    bind('confirmCloseJornada', 'click', () => carrerasModule.closeJornada());
 
     // Botón de nueva plataforma (uso delegación para mayor robustez)
     document.addEventListener('click', (e) => {
@@ -147,9 +149,8 @@ function setupEventListeners() {
     });
 
     // Exportar (vía historico o dashboard si existe botón)
-    bind('exportBtn', 'click', () => {
-        // Implementar exportación si es necesario
-    });
+    bind('exportBtn', 'click', () => carrerasModule.exportReport());
+    bind('exportReportBtn', 'click', () => carrerasModule.exportReport());
 
     // Firebase UI Bridges
     window.handleLogin = () => {

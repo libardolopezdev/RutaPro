@@ -6,7 +6,7 @@
 const DEFAULT_PLATFORMS = [
     { id: 'uber', name: 'UBER', color: '#059669' },
     { id: 'didi', name: 'DIDI', color: '#FF4700' },
-    { id: 'cabify', name: 'CABIFY', color: '#7350FF' },
+    { id: 'coopebombas', name: 'COOPEBOMBAS', color: '#00778c' },
     { id: 'indriver', name: 'INDRIVER', color: '#27B1FF' }
 ];
 
@@ -31,6 +31,24 @@ class Store {
     constructor(initialState) {
         this._state = initialState;
         this._listeners = [];
+
+        // MIGRATION: Force Coopebombas if Cabify exists or if defaults are missing
+        if (this._state.settings && this._state.settings.plataformas) {
+            let plats = [...this._state.settings.plataformas];
+
+            // Reemplazar Cabify por Coopebombas si existe
+            const cabifyIndex = plats.findIndex(p => p.id === 'cabify');
+            if (cabifyIndex !== -1) {
+                plats[cabifyIndex] = { id: 'coopebombas', name: 'COOPEBOMBAS', color: '#00778c' };
+            } else {
+                // Asegurarse de que COOPEBOMBAS exista
+                const hasCoope = plats.some(p => p.id === 'coopebombas');
+                if (!hasCoope) {
+                    plats.push({ id: 'coopebombas', name: 'COOPEBOMBAS', color: '#00778c' });
+                }
+            }
+            this._state.settings.plataformas = plats;
+        }
     }
 
     getState() {
