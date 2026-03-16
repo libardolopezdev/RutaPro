@@ -21,7 +21,7 @@
     <!-- SPLASH SCREEN -->
     <div id="splashScreen"
         style="position:fixed; inset:0; background:var(--bg-obsidian); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-        <img src="icons/logo.jpg" alt="Logo"
+        <img src="icons/Logo.png" alt="Logo"
             style="width:100px; height:100px; border-radius:50%; box-shadow:0 0 40px var(--emerald-glow);">
         <h2 style="margin-top:20px; color:var(--text-primary); letter-spacing:4px; font-weight:700;">RUTAPRO</h2>
     </div>
@@ -30,6 +30,8 @@
     <div id="loginScreen"
         style="display: none; min-height:100vh; align-items:center; justify-content:center; padding:20px;">
         <div class="glass-card" style="width:100%; max-width:360px; text-align:center;">
+            <img src="icons/Logo.png" alt="Logo"
+                style="width:80px; height:80px; border-radius:50%; box-shadow:0 0 30px var(--emerald-glow); margin-bottom:16px;">
             <h1 style="margin-bottom:8px;">Bienvenido</h1>
             <p id="authSubtitle" style="color:var(--text-secondary); font-size:12px; margin-bottom:32px;">Identifícate
                 para continuar</p>
@@ -272,6 +274,40 @@
                 </div>
             </header>
             <div id="historicoContent" style="margin-top:20px;"></div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL RESUMEN FINAL ===== -->
+    <div id="summaryModal" class="modal-overlay">
+        <div class="modal-glass">
+            <h3 style="margin-bottom:24px; text-align:center;">Resumen de la Jornada</h3>
+
+            <div style="margin-bottom:16px; border-bottom:1px solid var(--border-glass); padding-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span class="label-xs" style="margin:0;">Total Bruto</span>
+                    <span id="finalBruto" style="font-family:'JetBrains Mono'; font-weight:700;">$0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span class="label-xs" style="margin:0;">Total Gastos</span>
+                    <span id="finalGastos"
+                        style="font-family:'JetBrains Mono'; color:var(--ruby); font-weight:700;">$0</span>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="label-xs" style="margin:0;">Total Neto</span>
+                    <span id="finalNeto"
+                        style="font-family:'JetBrains Mono'; color:var(--emerald); font-weight:800; font-size:18px;">$0</span>
+                </div>
+            </div>
+
+            <button class="btn-ultra btn-emerald" id="confirmCloseJornada" style="margin-bottom:12px;">CERRAR JORNADA Y
+                GUARDAR</button>
+            <button class="btn-ultra" id="exportReportBtn"
+                style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--border-glass); margin-bottom:16px;">
+                COMPARTIR REPORTE (TXT)
+            </button>
+
+            <button data-close="summary"
+                style="width:100%; padding:12px; background:none; border:none; color:var(--text-secondary); cursor:pointer;">Cancelar</button>
         </div>
     </div>
 

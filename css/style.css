@@ -448,3 +448,46 @@ h3 {
         font-size: 38px;
     }
 }
+
+/* ============================================================
+   HISTORICO / REPORTES
+   ============================================================ */
+
+.historico-item {
+    background: var(--surface-glass);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.historico-fecha {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--emerald);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.historico-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    text-align: center;
+}
+
+.historico-stats div {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.historico-stats strong {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
