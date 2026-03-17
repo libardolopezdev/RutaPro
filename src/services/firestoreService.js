@@ -51,11 +51,39 @@ export const firestoreService = {
             });
     },
 
+    // Listener original (metadatos de jornada)
     subscribeToJornada(uid, callback) {
         return db.collection('users').doc(uid)
             .collection('jornada_activa').doc('data')
             .onSnapshot(doc => {
                 if (doc.exists) callback(doc.data());
+            });
+    },
+
+    /**
+     * Suscripción completa a la jornada activa que re-hidrata el store
+     * con carreras y gastos en tiempo real desde cualquier dispositivo.
+     * @param {string} uid - ID del usuario autenticado
+     * @param {function} callback - Recibe el objeto completo de jornada
+     * @returns {function} Función de cancelación del listener
+     */
+    subscribeToActiveJornada(uid, callback) {
+        return db.collection('users').doc(uid)
+            .collection('jornada_activa').doc('data')
+            .onSnapshot(doc => {
+                if (!doc.exists) {
+                    // Documento no existe: jornada cerrada o nunca iniciada
+                    callback({ jornadaIniciada: false, carreras: [], gastos: [] });
+                    return;
+                }
+                const data = doc.data();
+                // ?? false: si el campo no existe, la jornada NO está activa
+                callback({
+                    jornadaIniciada: data.jornadaIniciada ?? false,
+                    jornadaInicio: data.jornadaInicio ?? null,
+                    carreras: Array.isArray(data.carreras) ? data.carreras : [],
+                    gastos: Array.isArray(data.gastos) ? data.gastos : []
+                });
             });
     }
 };

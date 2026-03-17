@@ -6,6 +6,47 @@ import { showToast } from '../../utils/ui-utils.js';
 import { formatCurrency, getPlatformName } from '../../utils/format.js';
 import { firestoreService } from '../../services/firestoreService.js';
 
+// Persiste jornada activa (carreras + gastos) en Firestore para sincronización entre dispositivos.
+async function syncJornadaToFirestore() {
+    const state = store.getState();
+    if (!state.user || !state.jornadaIniciada) return;
+    const syncPayload = {
+        jornadaInicio: state.jornadaInicio,
+        jornadaIniciada: true,
+        carreras: state.carreras,
+        gastos: state.gastos
+    };
+    try {
+        await firestoreService.saveJornada(state.user.uid, syncPayload);
+    } catch (e) {
+        console.warn('Sync a Firestore falló (modo offline):', e.message);
+    }
+}
+
+let jornadaTimerInterval = null;
+
+function startJornadaTimer() {
+    stopJornadaTimer();
+    jornadaTimerInterval = setInterval(() => {
+        const state = store.getState();
+        if (!state.jornadaIniciada || !state.jornadaInicio) return;
+        const start = new Date(state.jornadaInicio);
+        const diffMs = Date.now() - start.getTime();
+        const totalMins = Math.floor(diffMs / 60000);
+        const hours = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        const el = document.getElementById('jornadaInfo');
+        if (el) el.textContent = hours > 0 ? `${hours}h ${mins}m activa` : `${mins}m activa`;
+    }, 30000); // actualiza cada 30 segundos
+}
+
+function stopJornadaTimer() {
+    if (jornadaTimerInterval) {
+        clearInterval(jornadaTimerInterval);
+        jornadaTimerInterval = null;
+    }
+}
+
 export const carrerasModule = {
     toggleJornada() {
         const state = store.getState();
@@ -16,6 +57,8 @@ export const carrerasModule = {
                 jornadaIniciada: true,
                 jornadaInicio: new Date().toISOString()
             });
+            startJornadaTimer();
+            syncJornadaToFirestore();
             showToast('Jornada iniciada correctamente', 'success');
             setTimeout(() => {
                 const input = document.getElementById('amountInput');
@@ -61,7 +104,9 @@ export const carrerasModule = {
         };
 
         if (state.user) {
-            await firestoreService.saveJornada(state.user.uid, jornadaData);
+            // Guardar en histórico Y borrar la jornada activa de Firestore
+            await firestoreService.addToHistorico(state.user.uid, jornadaData);
+            await firestoreService.clearJornada(state.user.uid);
         }
 
         store.setState({
@@ -72,6 +117,7 @@ export const carrerasModule = {
             selectedPlatform: null,
             selectedPayment: null
         });
+        stopJornadaTimer();
 
         document.getElementById('summaryModal').style.display = 'none';
         showToast('Jornada guardada correctamente', 'success');
@@ -146,6 +192,16 @@ export const carrerasModule = {
             selectedPayment: null
         });
 
+        syncJornadaToFirestore();
+
+        // Micro-animación en el balance
+        const balanceEl = document.getElementById('consolidadoNeto');
+        if (balanceEl) {
+            balanceEl.classList.remove('balance-pop');
+            void balanceEl.offsetWidth; // reflow para reiniciar animación
+            balanceEl.classList.add('balance-pop');
+        }
+
         const input = document.getElementById('amountInput');
         if (input) input.value = '';
 
@@ -158,6 +214,7 @@ export const carrerasModule = {
             store.setState({
                 carreras: state.carreras.filter(c => c.id !== id)
             });
+            syncJornadaToFirestore();
             showToast('Carrera eliminada', 'success');
         }
     },

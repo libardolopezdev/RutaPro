@@ -54,13 +54,19 @@ export const renderer = {
         if (!elements.jornadaBtn) return;
         if (state.jornadaIniciada && state.jornadaInicio) {
             const startTime = new Date(state.jornadaInicio);
+            const diffMs = Date.now() - startTime.getTime();
+            const totalMins = Math.floor(diffMs / 60000);
+            const hours = Math.floor(totalMins / 60);
+            const mins = totalMins % 60;
+            const durLabel = hours > 0 ? `${hours}h ${mins}m activa` : totalMins > 0 ? `${totalMins}m activa` : `Recién iniciada`;
+
             elements.jornadaBtn.textContent = 'CERRAR';
             elements.jornadaBtn.style.color = 'var(--ruby)';
             elements.jornadaBtn.style.borderColor = 'var(--ruby)';
             elements.jornadaBtn.style.background = 'rgba(239, 68, 68, 0.1)';
 
             elements.jornadaTitle.textContent = 'Jornada activa';
-            elements.jornadaInfo.textContent = `Desde ${startTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+            elements.jornadaInfo.textContent = durLabel;
             elements.jornadaIcon.style.background = 'var(--emerald-glow)';
             elements.jornadaIcon.style.color = 'var(--emerald)';
 
@@ -175,6 +181,23 @@ export const renderer = {
             elements.consolidadoNeto.textContent = formatCurrency(totalNeto);
             elements.consolidadoNeto.style.opacity = '1';
         }
+
+        // Badge de número de carreras
+        const badgeId = 'ridecountBadge';
+        let badge = document.getElementById(badgeId);
+        const heroCard = elements.consolidadoNeto ? elements.consolidadoNeto.closest('.glass-card') : null;
+        if (heroCard && state.jornadaIniciada) {
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.id = badgeId;
+                badge.className = 'ride-count-badge';
+                heroCard.appendChild(badge);
+            }
+            const count = state.carreras.length;
+            badge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${count} ${count === 1 ? 'carrera' : 'carreras'} hoy`;
+        } else if (badge) {
+            badge.remove();
+        }
     },
 
     updateSummary(state) {
@@ -190,12 +213,12 @@ export const renderer = {
             const color = getPlatformColor(platform, state.settings.plataformas);
             const displayName = getPlatformName(platform, state.settings.plataformas);
             return `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div class="platform-stat-row">
                     <div>
-                        <div style="font-weight:800; font-size:12px; color:${color};">${displayName.toUpperCase()}</div>
-                        <div style="font-size:10px; color:var(--text-muted);">${data.count} carreras</div>
+                        <div class="platform-stat-name" style="color:${color}">${displayName.toUpperCase()}</div>
+                        <div class="platform-stat-count">${data.count} ${data.count === 1 ? 'carrera' : 'carreras'}</div>
                     </div>
-                    <div style="font-family:'JetBrains Mono'; font-weight:600; font-size:14px;">${formatCurrency(data.total)}</div>
+                    <div class="platform-stat-val">${formatCurrency(data.total)}</div>
                 </div>
             `;
         }).join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Sin datos aún</div>';
@@ -243,7 +266,21 @@ export const renderer = {
 
     updateAddButton(state) {
         if (!elements.addCarrera) return;
-        const canAdd = state.selectedPlatform && state.selectedPayment;
+        
+        let canAdd = false;
+        let label = 'REGISTRAR';
+
+        if (!state.selectedPlatform && !state.selectedPayment) {
+            label = 'ELIGE PLATAFORMA';
+        } else if (state.selectedPlatform && !state.selectedPayment) {
+            label = 'ELIGE PAGO';
+        } else if (!state.selectedPlatform && state.selectedPayment) {
+            label = 'ELIGE PLATAFORMA';
+        } else {
+            canAdd = true;
+        }
+
         elements.addCarrera.disabled = !canAdd;
+        elements.addCarrera.textContent = label;
     }
 };

@@ -122,8 +122,8 @@
                 </div>
             </div>
 
-            <!-- JORNADA CARD -->
-            <div class="glass-card"
+            <!-- JORNADA CARD: fuera de appContent para que el blur no la afecte -->
+            <div class="glass-card" id="jornadaMainCard"
                 style="padding:16px 24px; display:flex; align-items:center; justify-content:space-between;">
                 <div style="display:flex; align-items:center; gap:16px;">
                     <div id="jornadaIcon"
@@ -147,7 +147,7 @@
             <!-- APP CONTENT (DISABLED BY DEFAULT) -->
             <div id="appContent" class="app-disabled">
 
-                <!-- REGISTRAR CARRERA -->
+                <!-- REGISTRAR CARRERA (PRIORIDAD 1) -->
                 <div class="glass-card">
                     <span class="label-xs">Nueva Carrera</span>
                     <input type="text" inputmode="numeric" class="input-premium" id="amountInput" placeholder="$ 0.000">

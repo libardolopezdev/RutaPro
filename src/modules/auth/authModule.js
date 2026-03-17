@@ -6,6 +6,8 @@ import { auth } from '../../services/firebase-init.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { showToast } from '../../utils/ui-utils.js';
 
+let activeJornadaUnsub = null;
+
 export const authModule = {
     init() {
         auth.onAuthStateChanged(user => {
@@ -47,6 +49,11 @@ export const authModule = {
 
     async logout() {
         if (confirm('¿Cerrar sesión?')) {
+            // Cancelar listener de sync antes de salir
+            if (activeJornadaUnsub) {
+                activeJornadaUnsub();
+                activeJornadaUnsub = null;
+            }
             await auth.signOut();
             store.setState({
                 carreras: [],
@@ -60,6 +67,29 @@ export const authModule = {
     showApp() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'block';
+        
+        // Activar sincronización en tiempo real entre dispositivos
+        const state = store.getState();
+        if (state.user && !activeJornadaUnsub) {
+            activeJornadaUnsub = firestoreService.subscribeToActiveJornada(
+                state.user.uid,
+                (remoteJornada) => {
+                    // Solo actualizar si el documento remoto es más nuevo
+                    const localState = store.getState();
+                    const remoteCarrerasCount = remoteJornada.carreras?.length ?? 0;
+                    const localCarrerasCount = localState.carreras?.length ?? 0;
+                    // Sync si el servidor tiene datos que el local no tiene
+                    if (remoteCarrerasCount !== localCarrerasCount || !localState.jornadaIniciada && remoteJornada.jornadaIniciada) {
+                        store.setState({
+                            jornadaIniciada: remoteJornada.jornadaIniciada,
+                            jornadaInicio: remoteJornada.jornadaInicio,
+                            carreras: remoteJornada.carreras,
+                            gastos: remoteJornada.gastos
+                        });
+                    }
+                }
+            );
+        }
     },
 
     showLogin() {

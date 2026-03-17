@@ -44,20 +44,21 @@
 }
 
 [data-theme="light"] {
-    --bg-obsidian: #F8FAFC;
-    --bg-sapphire: #F1f5f9;
-    --surface-base: rgba(255, 255, 255, 0.85);
-    --surface-glass: rgba(0, 0, 0, 0.02);
-    --surface-glass-light: rgba(0, 0, 0, 0.05);
+    --bg-obsidian: #F1F5F9;
+    --bg-sapphire: #FFFFFF;
+    --surface-base: rgba(255, 255, 255, 0.9);
+    --surface-glass: #FFFFFF;
+    --surface-glass-light: rgba(0, 0, 0, 0.04);
     --text-primary: #0F172A;
     --text-secondary: #475569;
-    --text-muted: #94A3B8;
-    --border-glass: rgba(0, 0, 0, 0.08);
+    --text-muted: #64748B;
+    --border-glass: rgba(0, 0, 0, 0.06);
+    --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
 
     /* Uber dynamic */
     --uber-color: var(--text-primary);
-    --uber-glow: rgba(0, 0, 0, 0.2);
-    --uber-bg: rgba(0, 0, 0, 0.05);
+    --uber-glow: rgba(0, 0, 0, 0.1);
+    --uber-bg: rgba(0, 0, 0, 0.03);
 }
 
 /* Base */
@@ -141,9 +142,9 @@ option {
     backdrop-filter: blur(var(--blur));
     -webkit-backdrop-filter: blur(var(--blur));
     border: 1px solid var(--border-glass);
-    border-radius: 32px;
-    padding: 24px;
-    margin-bottom: 24px;
+    border-radius: 24px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
     box-shadow: var(--shadow-soft);
     animation: slideUp var(--t) var(--ease) both;
 }
@@ -198,11 +199,11 @@ h3 {
 .hero-amount {
     font-family: 'JetBrains Mono', monospace;
     font-size: 44px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -2px;
-    line-height: 1;
-    margin: 8px 0;
-    background: linear-gradient(to right, var(--text-primary), #fff, var(--text-secondary));
+    line-height: 1.1;
+    margin: 4px 0;
+    background: linear-gradient(135deg, var(--text-primary) 30%, var(--text-secondary));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -374,6 +375,22 @@ h3 {
     justify-content: space-between;
     padding: 14px 0;
     border-bottom: 1px solid var(--border-glass);
+    animation: fadeSlideIn 0.3s var(--ease) both;
+}
+
+@keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes balancePop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.04); }
+    100% { transform: scale(1); }
+}
+
+.balance-pop {
+    animation: balancePop 0.4s var(--ease);
 }
 
 .ride-meta {
@@ -383,19 +400,71 @@ h3 {
 }
 
 .ride-plat {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 800;
     text-transform: uppercase;
 }
 
 .ride-time {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
 .ride-val {
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+/* Activity section wrapper */
+.activity-section .glass-card {
+    border-radius: 16px;
+    margin-bottom: 10px;
+}
+
+.activity-section .glass-card:last-child {
+    margin-bottom: 0;
+}
+
+/* Jornada timer */
+.jornada-stat {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--emerald);
+    margin-top: 2px;
+}
+
+/* Touch targets: all interactive buttons min 44px */
+.btn-ultra,
+.nav-btn,
+[data-payment],
+.p-chip,
+#jornadaBtn {
+    min-height: 44px;
+}
+
+/* Desglose platform row */
+.platform-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.platform-stat-name {
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.platform-stat-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+.platform-stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
     font-size: 15px;
 }
 
@@ -428,6 +497,13 @@ h3 {
     pointer-events: none;
     opacity: 0.4;
     filter: blur(2px) grayscale(1);
+    transition: all 0.3s var(--ease);
+}
+
+.app-disabled #jornadaMainCard {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    filter: none !important;
 }
 
 .success-dot {
@@ -478,7 +554,7 @@ h3 {
 }
 
 .historico-stats div {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
 }
@@ -486,8 +562,30 @@ h3 {
 .historico-stats strong {
     display: block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 4px;
+}
+
+/* Progress hero subtitle */
+.meta-progress-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Ride count badge within balance card */
+.ride-count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    background: var(--surface-glass-light);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
 }
