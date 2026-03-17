@@ -129,34 +129,51 @@ export const carrerasModule = {
         const totalGastos = state.gastos.reduce((sum, g) => sum + g.monto, 0);
         const totalNeto = (state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0)) - totalGastos;
 
-        let report = `🚗 RUTAPRO - REPORTE DE JORNADA\n`;
-        report += `📅 Fecha: ${new Date().toLocaleDateString('es-ES')}\n`;
-        report += `--------------------------------\n`;
-        report += `✅ Total Carreras: ${state.carreras.length}\n`;
-        report += `💵 Total Bruto: ${formatCurrency(totalBruto)}\n`;
-        report += `📉 Total Gastos: ${formatCurrency(totalGastos)}\n`;
-        report += `💰 Ganancia Neta: ${formatCurrency(totalNeto)}\n\n`;
+        // Mejora 3: calcular efectivo y digital por separado
+        let efectivo = 0;
+        let digital = 0;
+        state.carreras.forEach(c => {
+            if (c.payment === 'efectivo') efectivo += (c.neto || c.amount);
+            else digital += (c.neto || c.amount);
+        });
+        const efectivoReal = efectivo - totalGastos;
 
-        // Desglose por plataforma
-        report += `🎯 DESGLOSE POR PLATAFORMA:\n`;
+        let report = `🚗 *RUTAPRO — REPORTE DE JORNADA*\n`;
+        report += `📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `✅ Carreras: ${state.carreras.length}\n`;
+        report += `💵 Total Bruto: ${formatCurrency(totalBruto)}\n`;
+        report += `📉 Gastos: ${formatCurrency(totalGastos)}\n`;
+        report += `💰 *Neto Total: ${formatCurrency(totalNeto)}*\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `💵 Efectivo (después gastos): ${formatCurrency(efectivoReal)}\n`;
+        report += `💳 Digital: ${formatCurrency(digital)}\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+        // Desglose por plataforma ordenado descendente
+        report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
         const stats = {};
         state.carreras.forEach(c => {
-            if (!stats[c.platform]) stats[c.platform] = 0;
-            stats[c.platform] += c.amount;
+            if (!stats[c.platform]) stats[c.platform] = { total: 0, count: 0 };
+            stats[c.platform].total += (c.neto || c.amount);
+            stats[c.platform].count++;
         });
-        Object.entries(stats).forEach(([plat, amount]) => {
-            const name = getPlatformName(plat, state.settings.plataformas);
-            report += `  - ${name.toUpperCase()}: ${formatCurrency(amount)}\n`;
-        });
+        Object.entries(stats)
+            .sort(([, a], [, b]) => b.total - a.total)
+            .forEach(([plat, data]) => {
+                const name = getPlatformName(plat, state.settings.plataformas);
+                report += `  • ${name.toUpperCase()}: ${formatCurrency(data.total)} (${data.count} carreras)\n`;
+            });
 
-        // Intentar compartir usando Web Share API si está en móvil
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `#RutaPro`;
+
         if (navigator.share) {
             navigator.share({
                 title: 'Reporte RutaPro',
                 text: report
             }).catch(console.error);
         } else {
-            // Copiar al portapapeles en desktop
             navigator.clipboard.writeText(report).then(() => {
                 showToast('Reporte copiado al portapapeles', 'success');
             }).catch(() => {
@@ -198,14 +215,18 @@ export const carrerasModule = {
         const balanceEl = document.getElementById('consolidadoNeto');
         if (balanceEl) {
             balanceEl.classList.remove('balance-pop');
-            void balanceEl.offsetWidth; // reflow para reiniciar animación
+            void balanceEl.offsetWidth;
             balanceEl.classList.add('balance-pop');
         }
 
         const input = document.getElementById('amountInput');
-        if (input) input.value = '';
+        if (input) {
+            input.value = '';
+            // Mejora 6: re-enfocar el input para registrar la siguiente carrera
+            requestAnimationFrame(() => input.focus());
+        }
 
-        showToast('Carrera agregada correctamente', 'success');
+        showToast('Carrera agregada ✓', 'success');
     },
 
     deleteCarrera(id) {
@@ -219,8 +240,12 @@ export const carrerasModule = {
         }
     },
 
-    clearAll() {
+    async clearAll() {
         if (confirm('¿Estás seguro de limpiar todos los datos del día?')) {
+            const state = store.getState();
+            if (state.user) {
+                await firestoreService.clearJornada(state.user.uid);
+            }
             store.setState({
                 carreras: [],
                 gastos: [],
@@ -229,7 +254,7 @@ export const carrerasModule = {
                 selectedPlatform: null,
                 selectedPayment: null
             });
-            showToast('Todos los datos han sido eliminados', 'success');
+            showToast('Todos los datos han sido eliminados del servidor', 'success');
         }
     }
 };

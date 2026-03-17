@@ -68,18 +68,20 @@ export const authModule = {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'block';
         
-        // Activar sincronización en tiempo real entre dispositivos
         const state = store.getState();
         if (state.user && !activeJornadaUnsub) {
+            let lastProcessedMillis = 0;
+
             activeJornadaUnsub = firestoreService.subscribeToActiveJornada(
                 state.user.uid,
                 (remoteJornada) => {
-                    // Solo actualizar si el documento remoto es más nuevo
-                    const localState = store.getState();
-                    const remoteCarrerasCount = remoteJornada.carreras?.length ?? 0;
-                    const localCarrerasCount = localState.carreras?.length ?? 0;
-                    // Sync si el servidor tiene datos que el local no tiene
-                    if (remoteCarrerasCount !== localCarrerasCount || !localState.jornadaIniciada && remoteJornada.jornadaIniciada) {
+                    const remoteMillis = remoteJornada.updatedAt?.toMillis() || 0;
+                    
+                    // Sincronizar solo si el timestamp remoto es diferente (toMillis para precisión)
+                    // Esto evita loops infinitos y asegura que el snapshot sea la fuente de verdad.
+                    if (remoteMillis !== lastProcessedMillis) {
+                        lastProcessedMillis = remoteMillis;
+                        
                         store.setState({
                             jornadaIniciada: remoteJornada.jornadaIniciada,
                             jornadaInicio: remoteJornada.jornadaInicio,

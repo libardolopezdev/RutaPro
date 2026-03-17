@@ -122,35 +122,15 @@
                 </div>
             </div>
 
-            <!-- JORNADA CARD: fuera de appContent para que el blur no la afecte -->
-            <div class="glass-card" id="jornadaMainCard"
-                style="padding:16px 24px; display:flex; align-items:center; justify-content:space-between;">
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <div id="jornadaIcon"
-                        style="width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                    </div>
-                    <div>
-                        <div id="jornadaTitle" style="font-weight:700; font-size:15px;">Sin jornada</div>
-                        <div id="jornadaInfo" style="font-size:11px; color:var(--text-secondary);">Presiona para
-                            comenzar</div>
-                    </div>
-                </div>
-                <button id="jornadaBtn"
-                    style="padding:10px 20px; border-radius:14px; border:1px solid var(--emerald); background:rgba(16, 185, 129, 0.1); color:var(--emerald); font-weight:700; font-size:13px; cursor:pointer;">Iniciar</button>
-            </div>
-
+            <!-- APP CONTENT (DISABLED BY DEFAULT) -->
             <!-- APP CONTENT (DISABLED BY DEFAULT) -->
             <div id="appContent" class="app-disabled">
 
                 <!-- REGISTRAR CARRERA (PRIORIDAD 1) -->
-                <div class="glass-card">
+                <div class="glass-card" id="registrarCarreraCard">
                     <span class="label-xs">Nueva Carrera</span>
-                    <input type="text" inputmode="numeric" class="input-premium" id="amountInput" placeholder="$ 0.000">
+                    <input type="text" inputmode="numeric" class="input-premium" id="amountInput"
+                        placeholder="$ 0.000">
 
                     <div style="margin-top:24px;">
                         <span class="label-xs">Plataforma</span>
@@ -178,12 +158,36 @@
                         disabled>REGISTRAR</button>
                 </div>
 
+                <!-- JORNADA CARD: sticky wrapper para visibilidad en scroll -->
+                <div class="jornada-sticky-wrapper">
+                    <div class="glass-card" id="jornadaMainCard"
+                        style="padding:16px 24px; display:flex; align-items:center; justify-content:space-between;">
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <div id="jornadaIcon"
+                                style="width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div id="jornadaTitle" style="font-weight:700; font-size:15px;">Sin jornada</div>
+                                <div id="jornadaInfo" style="font-size:11px; color:var(--text-secondary);">Presiona para
+                                    comenzar</div>
+                            </div>
+                        </div>
+                        <button id="jornadaBtn"
+                            style="padding:10px 20px; border-radius:14px; border:1px solid var(--emerald); background:rgba(16, 185, 129, 0.1); color:var(--emerald); font-weight:700; font-size:13px; cursor:pointer;">Iniciar</button>
+                    </div>
+                </div>
+
                 <!-- GASTOS SECTION -->
                 <div class="glass-card">
                     <span class="label-xs">Gasto Rápido</span>
                     <div style="display:grid; grid-template-columns: 1fr 120px; gap:12px; margin-top:12px;">
-                        <input type="text" inputmode="numeric" id="gastoMonto" class="input-premium" placeholder="$ 0"
-                            style="font-size:24px;">
+                        <input type="text" inputmode="numeric" id="gastoMonto" class="input-premium"
+                            placeholder="$ 0" style="font-size:24px;">
                         <select id="gastoTipo"
                             style="background:var(--surface-glass); color:var(--text-primary); border:1px solid var(--border-glass); border-radius:16px; padding:0 12px; outline:none; font-family:inherit; font-size:11px; font-weight:600; height: 44px; align-self: end; margin-bottom: 2px;">
                             <option value="">Tipo...</option>
@@ -205,6 +209,7 @@
                         <span id="totalGastos" style="font-weight:700; color:var(--ruby);">$0</span>
                     </div>
                 </div>
+
 
                 <!-- RESUMEN POR PLATAFORMA -->
                 <div class="glass-card">
@@ -346,6 +351,11 @@
     <div id="toast" class="toast"
         style="position:fixed; bottom:110px; left:50%; transform:translateX(-50%); z-index:9999; display:none; padding:12px 24px; border-radius:16px; font-weight:700; color:white;">
     </div>
+
+    <!-- Botón Flotante (FAB) para Nueva Carrera -->
+    <button id="fabNewRace" class="fab-btn" title="Nueva Carrera">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>

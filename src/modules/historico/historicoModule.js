@@ -31,15 +31,32 @@ export const historicoModule = {
         const content = document.getElementById('historicoContent');
         if (!content) return;
 
-        content.innerHTML = data.map(item => `
-            <div class="historico-item">
-                <div class="historico-fecha">${new Date(item.fecha).toLocaleDateString('es-ES')}</div>
+        if (!data || data.length === 0) {
+            content.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:32px 0;">Sin jornadas registradas aún</div>';
+            return;
+        }
+
+        // Mejora 4: ordenar por ganancia descendente
+        const sorted = [...data].sort((a, b) => (b.ganancia || 0) - (a.ganancia || 0));
+        const topGanancia = sorted[0]?.ganancia || 0;
+
+        content.innerHTML = sorted.map((item, idx) => {
+            const promedio = item.totalCarreras > 0
+                ? formatCurrency(item.ganancia / item.totalCarreras)
+                : formatCurrency(0);
+            const isTop = idx === 0 && item.ganancia === topGanancia && sorted.length > 0;
+
+            return `
+            <div class="historico-item${isTop ? ' historico-item--top' : ''}">
+                ${isTop ? '<div class="historico-top-badge">🏆 Mayor ingreso</div>' : ''}
+                <div class="historico-fecha">${new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
                 <div class="historico-stats">
                     <div><strong>${item.totalCarreras}</strong><br>Carreras</div>
-                    <div><strong>${formatCurrency(item.totalBruto)}</strong><br>Bruto</div>
                     <div><strong>${formatCurrency(item.ganancia)}</strong><br>Neto</div>
+                    <div><strong>${promedio}</strong><br>Promedio</div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 };

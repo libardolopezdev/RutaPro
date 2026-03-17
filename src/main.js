@@ -38,14 +38,27 @@ function setupEventListeners() {
     };
 
     bind('jornadaBtn', 'click', () => carrerasModule.toggleJornada());
+    
+    bind('fabNewRace', 'click', () => {
+        const target = document.querySelector('.glass-card');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            requestAnimationFrame(() => {
+                const input = document.getElementById('amountInput');
+                if (input) input.focus();
+            });
+        }
+    });
 
     bind('addCarrera', 'click', () => {
         const input = document.getElementById('amountInput');
-        const amountStr = input.value.replace(/\D/g, ''); // Solo números
+        const amountStr = input.value.replace(/\D/g, '');
         const amount = parseFloat(amountStr);
         if (amount) {
             carrerasModule.addCarrera(amount);
+            // Limpiar input y devolver foco
             input.value = '';
+            requestAnimationFrame(() => input.focus());
         }
     });
 

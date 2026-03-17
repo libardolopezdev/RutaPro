@@ -7,6 +7,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
+    --header-height: 62px;
     /* Obsidian Palette */
     --bg-obsidian: #080A0D;
     --bg-sapphire: #0D121D;
@@ -495,12 +496,18 @@ h3 {
 /* Animations and Utilities */
 .app-disabled {
     pointer-events: none;
-    opacity: 0.4;
-    filter: blur(2px) grayscale(1);
     transition: all 0.3s var(--ease);
 }
 
-.app-disabled #jornadaMainCard {
+/* Blur only children except the journey controls */
+.app-disabled > *:not(.jornada-sticky-wrapper) {
+    opacity: 0.4;
+    filter: blur(2px) grayscale(1);
+    pointer-events: none;
+}
+
+/* Ensure the sticky wrapper remains fully interactive and visible */
+.app-disabled .jornada-sticky-wrapper {
     pointer-events: auto !important;
     opacity: 1 !important;
     filter: none !important;
@@ -588,4 +595,94 @@ h3 {
     font-size: 12px;
     font-weight: 700;
     color: var(--text-secondary);
+}
+
+/* ============================================================
+   MEJORA 5 — Banner de Jornada Sticky
+   ============================================================ */
+
+.jornada-sticky-wrapper {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 100;
+    /* Fondo semi-opaco para que no se mezcle con las tarjetas debajo */
+    background: var(--bg-obsidian);
+    padding: 4px 0 8px;
+    margin-bottom: 0;
+}
+
+/* En modo claro, el fondo también debe ser sólido */
+[data-theme="light"] .jornada-sticky-wrapper {
+    background: var(--bg-obsidian);
+}
+
+/* La tarjeta dentro del sticky mantiene sus estilos base */
+.jornada-sticky-wrapper .glass-card {
+    margin-bottom: 0;
+    /* Borde más notable cuando la jornada está activa (se añade via JS) */
+}
+
+/* ============================================================
+   MEJORA 4 — Reportes: fila top resaltada
+   ============================================================ */
+
+.historico-item--top {
+    border-color: var(--emerald);
+    box-shadow: 0 0 0 1px var(--emerald), 0 8px 24px rgba(16, 185, 129, 0.15);
+    position: relative;
+}
+
+.historico-top-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--emerald);
+    margin-bottom: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+}
+/* FAB - Bot�n Flotante Inteligente */
+.fab-btn {
+    position: fixed;
+    bottom: 110px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    background: var(--emerald);
+    color: white;
+    border: none;
+    box-shadow: 0 8px 32px var(--emerald-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 900;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0;
+    transform: scale(0.5) translateY(40px);
+    pointer-events: none;
+}
+
+.fab-btn.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    pointer-events: auto;
+}
+
+.fab-btn:active {
+    transform: scale(0.95);
+}
+
+.plat-not-active {
+    font-size: 10px;
+    opacity: 0.6;
+    font-weight: 500;
+    margin-left: 6px;
+    font-family: inherit;
+    letter-spacing: 0.02em;
 }

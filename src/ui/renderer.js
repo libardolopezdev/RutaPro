@@ -3,7 +3,7 @@
  * Capa de presentación (UI) - Ultra-Premium Edition.
  */
 
-import { formatCurrency, getPlatformColor, getPlatformName } from '../utils/format.js';
+import { formatCurrency, normalizePlatform } from '../utils/format.js';
 
 const elements = {
     currentDate: document.getElementById('currentDate'),
@@ -209,13 +209,19 @@ export const renderer = {
             stats[c.platform].total += c.amount;
         });
 
-        elements.plataformasStats.innerHTML = Object.entries(stats).map(([platform, data]) => {
-            const color = getPlatformColor(platform, state.settings.plataformas);
-            const displayName = getPlatformName(platform, state.settings.plataformas);
+        // Mejora 2: ordenar por total descendente
+        const sorted = Object.entries(stats).sort(([, a], [, b]) => b.total - a.total);
+
+        elements.plataformasStats.innerHTML = sorted.map(([platformId, data]) => {
+            const norm = normalizePlatform(platformId, state.settings.plataformas);
+            const statusLabel = norm.isActiva ? '' : '<span class="plat-not-active">• No activa</span>';
+            
             return `
                 <div class="platform-stat-row">
                     <div>
-                        <div class="platform-stat-name" style="color:${color}">${displayName.toUpperCase()}</div>
+                        <div class="platform-stat-name" style="color:${norm.color}">
+                            ${norm.name}${statusLabel}
+                        </div>
                         <div class="platform-stat-count">${data.count} ${data.count === 1 ? 'carrera' : 'carreras'}</div>
                     </div>
                     <div class="platform-stat-val">${formatCurrency(data.total)}</div>
@@ -227,12 +233,11 @@ export const renderer = {
     updateCarrerasList(state) {
         if (!elements.carrerasList) return;
         elements.carrerasList.innerHTML = state.carreras.slice(-5).reverse().map(c => {
-            const color = getPlatformColor(c.platform, state.settings.plataformas);
-            const displayName = getPlatformName(c.platform, state.settings.plataformas);
+            const norm = normalizePlatform(c.platform, state.settings.plataformas);
             return `
                 <div class="ride-item">
                     <div class="ride-meta">
-                        <span class="ride-plat" style="color:${color}">${displayName}</span>
+                        <span class="ride-plat" style="color:${norm.color}">${norm.name}</span>
                         <span class="ride-time">${new Date(c.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} • ${c.payment.toUpperCase()}</span>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -244,6 +249,28 @@ export const renderer = {
                 </div>
             `;
         }).join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Añade tu primera carrera</div>';
+
+        this.initSmartFAB();
+    },
+
+    initSmartFAB() {
+        const fab = document.getElementById('fabNewRace');
+        const target = document.querySelector('.glass-card'); // La primera tarjeta (Nueva Carrera)
+        if (!fab || !target || this.fabObserved) return;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                // Si la sección Nueva Carrera NO es visible, mostrar el FAB
+                if (entry.isIntersecting) {
+                    fab.classList.remove('visible');
+                } else {
+                    fab.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        observer.observe(target);
+        this.fabObserved = true;
     },
 
     updateGastosList(state) {
