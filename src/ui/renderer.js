@@ -52,6 +52,11 @@ export const renderer = {
 
     updateJornadaUI(state) {
         if (!elements.jornadaBtn) return;
+
+        const btn = elements.jornadaBtn;
+        const card = document.getElementById('jornadaMainCard');
+        const fab = document.getElementById('fabNewRace');
+
         if (state.jornadaIniciada && state.jornadaInicio) {
             const startTime = new Date(state.jornadaInicio);
             const diffMs = Date.now() - startTime.getTime();
@@ -60,29 +65,43 @@ export const renderer = {
             const mins = totalMins % 60;
             const durLabel = hours > 0 ? `${hours}h ${mins}m activa` : totalMins > 0 ? `${totalMins}m activa` : `Recién iniciada`;
 
-            elements.jornadaBtn.textContent = 'CERRAR';
-            elements.jornadaBtn.style.color = 'var(--ruby)';
-            elements.jornadaBtn.style.borderColor = 'var(--ruby)';
-            elements.jornadaBtn.style.background = 'rgba(239, 68, 68, 0.1)';
+            btn.textContent = 'CERRAR';
+            btn.className = 'nav-btn'; // Reset
+            btn.style.color = 'var(--ruby)';
+            btn.style.borderColor = 'var(--ruby)';
+            btn.style.background = 'rgba(239, 68, 68, 0.1)';
 
             elements.jornadaTitle.textContent = 'Jornada activa';
             elements.jornadaInfo.textContent = durLabel;
             elements.jornadaIcon.style.background = 'var(--emerald-glow)';
             elements.jornadaIcon.style.color = 'var(--emerald)';
 
+            if (card) card.classList.remove('jornada-hero');
             elements.appContent.classList.remove('app-disabled');
+
+            // FAB para AGREGAR carrera (Icono PLUS)
+            if (fab) {
+                fab.classList.remove('fab-start');
+                fab.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+            }
         } else {
-            elements.jornadaBtn.textContent = 'INICIAR';
-            elements.jornadaBtn.style.color = 'var(--emerald)';
-            elements.jornadaBtn.style.borderColor = 'var(--emerald)';
-            elements.jornadaBtn.style.background = 'rgba(16, 185, 129, 0.1)';
+            btn.textContent = 'INICIAR JORNADA';
+            btn.className = 'btn-ultra btn-hero';
+            btn.style = ''; // Limpiar estilos previos
 
             elements.jornadaTitle.textContent = 'Sin jornada';
-            elements.jornadaInfo.textContent = 'Presiona para iniciar';
+            elements.jornadaInfo.textContent = 'Presiona para comenzar';
             elements.jornadaIcon.style.background = 'rgba(255,255,255,0.05)';
             elements.jornadaIcon.style.color = 'rgba(255,255,255,0.3)';
 
+            if (card) card.classList.add('jornada-hero');
             elements.appContent.classList.add('app-disabled');
+
+            // FAB para INICIAR (Icono CLOCK/PLAY)
+            if (fab) {
+                fab.classList.add('fab-start', 'visible');
+                fab.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+            }
         }
     },
 
@@ -255,12 +274,26 @@ export const renderer = {
 
     initSmartFAB() {
         const fab = document.getElementById('fabNewRace');
-        const target = document.querySelector('.glass-card'); // La primera tarjeta (Nueva Carrera)
-        if (!fab || !target || this.fabObserved) return;
+        const target = document.querySelector('#registrarCarreraCard');
+        const state = require('../../state/store.js').store.getState(); // Acceso directo para estado actual
 
-        const observer = new IntersectionObserver((entries) => {
+        if (!fab || !target) return;
+
+        // Si NO hay jornada iniciada, el FAB es para INICIAR y debe ser siempre visible
+        if (!state.jornadaIniciada) {
+            fab.classList.add('visible');
+            if (this.fabObserver) {
+                this.fabObserver.disconnect();
+                this.fabObserver = null;
+            }
+            return;
+        }
+
+        // Si HAY jornada, usar Observer para ocultarlo cuando el form es visible
+        if (this.fabObserver) return;
+
+        this.fabObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                // Si la sección Nueva Carrera NO es visible, mostrar el FAB
                 if (entry.isIntersecting) {
                     fab.classList.remove('visible');
                 } else {
@@ -269,8 +302,7 @@ export const renderer = {
             });
         }, { threshold: 0.1 });
 
-        observer.observe(target);
-        this.fabObserved = true;
+        this.fabObserver.observe(target);
     },
 
     updateGastosList(state) {

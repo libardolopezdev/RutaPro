@@ -123,40 +123,7 @@
             </div>
 
             <!-- APP CONTENT (DISABLED BY DEFAULT) -->
-            <!-- APP CONTENT (DISABLED BY DEFAULT) -->
             <div id="appContent" class="app-disabled">
-
-                <!-- REGISTRAR CARRERA (PRIORIDAD 1) -->
-                <div class="glass-card" id="registrarCarreraCard">
-                    <span class="label-xs">Nueva Carrera</span>
-                    <input type="text" inputmode="numeric" class="input-premium" id="amountInput"
-                        placeholder="$ 0.000">
-
-                    <div style="margin-top:24px;">
-                        <span class="label-xs">Plataforma</span>
-                        <div class="platform-grid" id="platformButtonsContainer">
-                            <!-- Dinámico -->
-                        </div>
-                    </div>
-
-                    <div style="margin-top:24px;">
-                        <span class="label-xs">Método de Pago</span>
-                        <div id="paymentButtons"
-                            style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
-                            <button class="nav-btn" data-payment="efectivo"
-                                style="background:var(--surface-glass); border-radius:14px; padding:12px; border:1px solid var(--border-glass);">EFECTIVO</button>
-                            <button class="nav-btn" data-payment="tarjeta"
-                                style="background:var(--surface-glass); border-radius:14px; padding:12px; border:1px solid var(--border-glass);">TARJETA</button>
-                            <button class="nav-btn" data-payment="vale"
-                                style="background:var(--surface-glass); border-radius:14px; padding:12px; border:1px solid var(--border-glass);">VALE</button>
-                            <button class="nav-btn" data-payment="transferencia"
-                                style="background:var(--surface-glass); border-radius:14px; padding:12px; border:1px solid var(--border-glass);">TRANSFERENCIA</button>
-                        </div>
-                    </div>
-
-                    <button class="btn-ultra btn-emerald" id="addCarrera" style="margin-top:32px;"
-                        disabled>REGISTRAR</button>
-                </div>
 
                 <!-- JORNADA CARD: sticky wrapper para visibilidad en scroll -->
                 <div class="jornada-sticky-wrapper">
@@ -181,6 +148,12 @@
                             style="padding:10px 20px; border-radius:14px; border:1px solid var(--emerald); background:rgba(16, 185, 129, 0.1); color:var(--emerald); font-weight:700; font-size:13px; cursor:pointer;">Iniciar</button>
                     </div>
                 </div>
+
+                <!-- REGISTRAR CARRERA (PRIORIDAD 1) -->
+                <div class="glass-card" id="registrarCarreraCard">
+                    <span class="label-xs">Nueva Carrera</span>
+                    <input type="text" inputmode="numeric" class="input-premium" id="amountInput"
+                        placeholder="$ 0.000">
 
                 <!-- GASTOS SECTION -->
                 <div class="glass-card">

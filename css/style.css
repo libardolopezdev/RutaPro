@@ -686,3 +686,32 @@ h3 {
     font-family: inherit;
     letter-spacing: 0.02em;
 }
+
+/* v4: Action Hierarchy - Hero State */
+.jornada-hero {
+    border: 2px solid var(--emerald) !important;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(8, 10, 13, 0.4) 100%) !important;
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15) !important;
+    padding: 24px !important;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-hero {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--emerald-glow);
+    padding: 12px 28px !important;
+    font-size: 15px !important;
+    animation: pulse-emerald 2s infinite;
+}
+
+@keyframes pulse-emerald {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* FAB Contextual: Iniciar Jornada vs Agregar Carrera */
+.fab-btn.fab-start {
+    background: var(--gold);
+    box-shadow: 0 8px 32px rgba(234, 179, 8, 0.3);
+}

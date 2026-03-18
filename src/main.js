@@ -40,13 +40,20 @@ function setupEventListeners() {
     bind('jornadaBtn', 'click', () => carrerasModule.toggleJornada());
     
     bind('fabNewRace', 'click', () => {
-        const target = document.querySelector('.glass-card');
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth' });
-            requestAnimationFrame(() => {
-                const input = document.getElementById('amountInput');
-                if (input) input.focus();
-            });
+        const state = store.getState();
+        if (!state.jornadaIniciada) {
+            // Acción contextual: Iniciar jornada si no hay una activa
+            carrerasModule.toggleJornada();
+        } else {
+            // Acción contextual: Scroll al formulario si la jornada ya inició
+            const target = document.querySelector('#registrarCarreraCard');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                requestAnimationFrame(() => {
+                    const input = document.getElementById('amountInput');
+                    if (input) input.focus();
+                });
+            }
         }
     });
 
