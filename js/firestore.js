@@ -198,8 +198,35 @@ async function loadSettingsFromFirestore() {
 
             if (data.plataformas && Array.isArray(data.plataformas) && data.plataformas.length > 0) {
                 appState.settings.plataformas = data.plataformas;
-            }
 
+                // Limpiar cabify legacy — renombrar a mano
+                appState.settings.plataformas = appState.settings.plataformas.map(p => {
+                    if (p.id === 'cabify') return { ...p, id: 'mano', name: 'MANO', color: '#7C3AED' };
+                    return p;
+                });
+
+                // Eliminar duplicados por id (queda el primero)
+                const seen = new Set();
+                appState.settings.plataformas = appState.settings.plataformas.filter(p => {
+                    if (seen.has(p.id)) return false;
+                    seen.add(p.id);
+                    return true;
+                });
+
+                // Agregar plataformas nuevas que no estén en Firestore
+                DEFAULT_PLATFORMS.forEach(def => {
+                    const index = appState.settings.plataformas.findIndex(p => p.id === def.id);
+                    if (index === -1) {
+                        appState.settings.plataformas.push(def);
+                        console.info(`Plataforma nueva agregada desde default: ${def.name}`);
+                    } else {
+                        if (appState.settings.plataformas[index].color !== def.color) {
+                            appState.settings.plataformas[index].color = def.color;
+                            console.info(`Color de plataforma ${def.name} actualizado por branding.`);
+                        }
+                    }
+                });
+            }
             elements.metaDisplay.textContent = formatCurrency(appState.settings.meta);
             updateUI(); // Forzar redibujado de botones
         }

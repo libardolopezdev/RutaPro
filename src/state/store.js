@@ -7,7 +7,7 @@ const DEFAULT_PLATFORMS = [
     { id: 'uber', name: 'UBER', color: '#059669' },
     { id: 'didi', name: 'DIDI', color: '#FF4700' },
     { id: 'coopebombas', name: 'COOPEBOMBAS', color: '#00778c' },
-    { id: 'indriver', name: 'INDRIVER', color: '#27B1FF' }
+    { id: 'indriver', name: 'INDRIVER', color: '#C0F11C' }
 ];
 
 const initialState = {

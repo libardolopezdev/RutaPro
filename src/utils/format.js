@@ -42,10 +42,12 @@ export function normalizePlatform(platformId, settingsPlatforms = []) {
 
     // 2. Mapeos Legacy
     const legacyMap = {
-        'cabify': { name: 'CABIFY', color: '#7338D2' },
-        'coop': { name: 'COOPEBOMBAS', color: '#10b981' },
+        'mano': { name: 'MANO', color: '#7C3AED' },
+        'cabify': { name: 'MANO', color: '#7C3AED' },
+        'coop': { name: 'COOPEBOMBAS', color: '#1976D2' },
         'uber': { name: 'UBER', color: '#000000' },
-        'didi': { name: 'DIDI', color: '#FF4700' }
+        'didi': { name: 'DIDI', color: '#FF4700' },
+        'idriver': { name: 'INDRIVER', color: '#C0F11C' },
     };
     if (legacyMap[id]) {
         name = legacyMap[id].name;
@@ -53,8 +55,8 @@ export function normalizePlatform(platformId, settingsPlatforms = []) {
     }
 
     // 3. Buscar en configuración activa (case-insensitive)
-    const activePlat = settingsPlatforms.find(p => 
-        p.id.toLowerCase() === id || 
+    const activePlat = settingsPlatforms.find(p =>
+        p.id.toLowerCase() === id ||
         p.name.toLowerCase() === id ||
         p.id.toLowerCase() === rawId.toLowerCase()
     );

@@ -63,18 +63,15 @@ function renderPlatformButtons() {
         btn.className = `platform-btn ${plat.id}`;
         btn.dataset.platform = plat.id;
         btn.textContent = plat.name || plat.id.toUpperCase();
-        btn.style.backgroundColor = plat.color;
-        btn.style.color = '#ffffff';
+        btn.style.backgroundColor = 'transparent';
+        btn.style.border = `1.5px solid ${plat.color}`;
+        btn.style.color = plat.color;
+        btn.style.boxShadow = `0 3px 10px ${plat.color}33`;
 
-        // Glow de color según la plataforma
-        btn.style.boxShadow = `0 3px 10px ${plat.color}66`;
-
-
-
-        // Restaurar selected si aplica
         if (appState.selectedPlatform === plat.id) {
             btn.classList.add('selected');
-            btn.style.boxShadow = `0 6px 20px ${plat.color}99, 0 0 0 3px ${plat.color}44`;
+            btn.style.backgroundColor = `${plat.color}22`;
+            btn.style.boxShadow = `0 6px 20px ${plat.color}66, 0 0 0 2px ${plat.color}44`;
         }
 
         btn.addEventListener('click', () => selectPlatform(plat.id));

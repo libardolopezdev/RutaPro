@@ -128,39 +128,64 @@
                 <!-- JORNADA CARD: sticky wrapper para visibilidad en scroll -->
                 <div class="jornada-sticky-wrapper">
                     <div class="glass-card" id="jornadaMainCard"
-                        style="padding:16px 24px; display:flex; align-items:center; justify-content:space-between;">
-                        <div style="display:flex; align-items:center; gap:16px;">
+                        style="padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
                             <div id="jornadaIcon"
-                                style="width:48px; height:48px; border-radius:16px; display:flex; align-items:center; justify-content:center;">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                style="width:42px; height:42px; flex-shrink:0; border-radius:14px; display:flex; align-items:center; justify-content:center;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.5">
                                     <circle cx="12" cy="12" r="10" />
                                     <polyline points="12 6 12 12 16 14" />
                                 </svg>
                             </div>
-                            <div>
-                                <div id="jornadaTitle" style="font-weight:700; font-size:15px;">Sin jornada</div>
-                                <div id="jornadaInfo" style="font-size:11px; color:var(--text-secondary);">Presiona para
-                                    comenzar</div>
+                            <div style="min-width:0;">
+                                <div id="jornadaTitle"
+                                    style="font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    Sin jornada</div>
+                                <div id="jornadaInfo"
+                                    style="font-size:11px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    Presiona para comenzar</div>
                             </div>
                         </div>
                         <button id="jornadaBtn"
-                            style="padding:10px 20px; border-radius:14px; border:1px solid var(--emerald); background:rgba(16, 185, 129, 0.1); color:var(--emerald); font-weight:700; font-size:13px; cursor:pointer;">Iniciar</button>
+                            style="flex-shrink:0; min-width:100px; padding:9px 16px; border-radius:12px; border:1px solid var(--emerald); color:var(--emerald); font-weight:700; font-size:12px; cursor:pointer; text-align:center; display:flex; align-items:center; justify-content:center;">Iniciar</button>
                     </div>
                 </div>
 
                 <!-- REGISTRAR CARRERA (PRIORIDAD 1) -->
                 <div class="glass-card" id="registrarCarreraCard">
                     <span class="label-xs">Nueva Carrera</span>
-                    <input type="text" inputmode="numeric" class="input-premium" id="amountInput"
-                        placeholder="$ 0.000">
+                    <input type="text" inputmode="numeric" class="input-premium" id="amountInput" placeholder="$ 0.000">
 
+                    <div style="margin-top:20px;">
+                        <span class="label-xs">Plataforma</span>
+                        <div id="platformButtonsContainer" class="platform-grid" style="margin-top:10px;"></div>
+                    </div>
+
+                    <div style="margin-top:20px;">
+                        <span class="label-xs">Método de Pago</span>
+                        <div id="paymentButtons"
+                            style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                            <button data-payment="efectivo"
+                                style="padding:14px; border-radius:16px; border:1px solid var(--border-glass); background:var(--surface-glass); color:var(--text-secondary); font-weight:700; font-size:12px; letter-spacing:0.05em; cursor:pointer; transition:all 0.3s;">EFECTIVO</button>
+                            <button data-payment="tarjeta"
+                                style="padding:14px; border-radius:16px; border:1px solid var(--border-glass); background:var(--surface-glass); color:var(--text-secondary); font-weight:700; font-size:12px; letter-spacing:0.05em; cursor:pointer; transition:all 0.3s;">TARJETA</button>
+                            <button data-payment="vale"
+                                style="padding:14px; border-radius:16px; border:1px solid var(--border-glass); background:var(--surface-glass); color:var(--text-secondary); font-weight:700; font-size:12px; letter-spacing:0.05em; cursor:pointer; transition:all 0.3s;">VALE</button>
+                            <button data-payment="transferencia"
+                                style="padding:14px; border-radius:16px; border:1px solid var(--border-glass); background:var(--surface-glass); color:var(--text-secondary); font-weight:700; font-size:12px; letter-spacing:0.05em; cursor:pointer; transition:all 0.3s;">TRANSFERENCIA</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-ultra btn-emerald" id="addCarrera" style="margin-top:24px;" disabled>ELIGE
+                        PLATAFORMA</button>
+                </div>
                 <!-- GASTOS SECTION -->
                 <div class="glass-card">
                     <span class="label-xs">Gasto Rápido</span>
                     <div style="display:grid; grid-template-columns: 1fr 120px; gap:12px; margin-top:12px;">
-                        <input type="text" inputmode="numeric" id="gastoMonto" class="input-premium"
-                            placeholder="$ 0" style="font-size:24px;">
+                        <input type="text" inputmode="numeric" id="gastoMonto" class="input-premium" placeholder="$ 0"
+                            style="font-size:24px;">
                         <select id="gastoTipo"
                             style="background:var(--surface-glass); color:var(--text-primary); border:1px solid var(--border-glass); border-radius:16px; padding:0 12px; outline:none; font-family:inherit; font-size:11px; font-weight:600; height: 44px; align-self: end; margin-bottom: 2px;">
                             <option value="">Tipo...</option>
@@ -277,7 +302,8 @@
                 </div>
             </div>
 
-            <button class="btn-ultra btn-emerald" id="confirmCloseJornada" style="margin-bottom:12px;">CERRAR JORNADA Y
+            <button class="btn-ultra btn-emerald" id="confirmCloseJornada" style="margin-bottom:12px;">CERRAR
+                JORNADA Y
                 GUARDAR</button>
             <button class="btn-ultra" id="exportReportBtn"
                 style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--border-glass); margin-bottom:16px;">
@@ -327,7 +353,10 @@
 
     <!-- Botón Flotante (FAB) para Nueva Carrera -->
     <button id="fabNewRace" class="fab-btn" title="Nueva Carrera">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
     </button>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>

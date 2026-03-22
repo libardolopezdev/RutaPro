@@ -78,10 +78,24 @@ async function loadAppData() {
         }
     }
 
-    // GARANTÍA: Si después de cargar local y remoto no hay plataformas, restaurar defaults
+    // GARANTÍA: Sincronizar plataformas con defaults (agrega nuevas sin borrar existentes)
     if (!appState.settings.plataformas || appState.settings.plataformas.length === 0) {
         console.info('Restaurando plataformas por defecto...');
         appState.settings.plataformas = JSON.parse(JSON.stringify(DEFAULT_PLATFORMS));
+    } else {
+        DEFAULT_PLATFORMS.forEach(def => {
+            const index = appState.settings.plataformas.findIndex(p => p.id === def.id);
+            if (index === -1) {
+                appState.settings.plataformas.push(def);
+                console.info(`Plataforma nueva agregada: ${def.name}`);
+            } else {
+                // Sincronizar color si es una plataforma por defecto
+                if (appState.settings.plataformas[index].color !== def.color) {
+                    appState.settings.plataformas[index].color = def.color;
+                    console.info(`Color de plataforma ${def.name} actualizado a institucional.`);
+                }
+            }
+        });
     }
 
     // Restaurar estado visual de la jornada iniciada

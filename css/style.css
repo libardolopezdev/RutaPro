@@ -380,14 +380,29 @@ h3 {
 }
 
 @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to   { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @keyframes balancePop {
-    0%   { transform: scale(1); }
-    50%  { transform: scale(1.04); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.04);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 .balance-pop {
@@ -500,7 +515,7 @@ h3 {
 }
 
 /* Blur only children except the journey controls */
-.app-disabled > *:not(.jornada-sticky-wrapper) {
+.app-disabled>*:not(.jornada-sticky-wrapper) {
     opacity: 0.4;
     filter: blur(2px) grayscale(1);
     pointer-events: none;
@@ -605,15 +620,13 @@ h3 {
     position: sticky;
     top: var(--header-height);
     z-index: 100;
-    /* Fondo semi-opaco para que no se mezcle con las tarjetas debajo */
-    background: var(--bg-obsidian);
-    padding: 4px 0 8px;
-    margin-bottom: 0;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 8px;
 }
 
-/* En modo claro, el fondo también debe ser sólido */
 [data-theme="light"] .jornada-sticky-wrapper {
-    background: var(--bg-obsidian);
+    background: transparent;
 }
 
 /* La tarjeta dentro del sticky mantiene sus estilos base */
@@ -645,7 +658,8 @@ h3 {
     border-radius: 20px;
     padding: 3px 10px;
 }
-/* FAB - Bot�n Flotante Inteligente */
+
+/* FAB - Bot�n Flotante Inteligente */
 .fab-btn {
     position: fixed;
     bottom: 110px;
@@ -705,13 +719,37 @@ h3 {
 }
 
 @keyframes pulse-emerald {
-    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-    70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
 }
 
 /* FAB Contextual: Iniciar Jornada vs Agregar Carrera */
 .fab-btn.fab-start {
     background: var(--gold);
     box-shadow: 0 8px 32px rgba(234, 179, 8, 0.3);
+}
+
+.cierre {
+    background: rgba(220, 38, 38, 0.15) !important;
+    border: 1px solid #dc2626 !important;
+    color: #ef4444 !important;
+    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#jornadaBtn.cierre {
+    background: rgba(220, 38, 38, 0.15) !important;
+    border: 1px solid #dc2626 !important;
+    color: #ef4444 !important;
 }

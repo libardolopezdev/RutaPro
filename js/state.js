@@ -12,7 +12,7 @@ var DEFAULT_PLATFORMS = [
     { id: 'uber', name: 'UBER', color: '#000000' },
     { id: 'didi', name: 'DIDI', color: '#FF6B35' },
     { id: 'coop', name: 'COOPEBOMBAS', color: '#1976D2' },
-    { id: 'idriver', name: 'IDRIVER', color: '#00BF63' },
+    { id: 'idriver', name: 'INDRIVER', color: '#C0F11C' },
     { id: 'mano', name: 'MANO', color: '#7C3AED' },
 ];
 

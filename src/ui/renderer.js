@@ -66,10 +66,10 @@ export const renderer = {
             const durLabel = hours > 0 ? `${hours}h ${mins}m activa` : totalMins > 0 ? `${totalMins}m activa` : `Recién iniciada`;
 
             btn.textContent = 'CERRAR';
-            btn.className = 'nav-btn'; // Reset
-            btn.style.color = 'var(--ruby)';
-            btn.style.borderColor = 'var(--ruby)';
-            btn.style.background = 'rgba(239, 68, 68, 0.1)';
+            btn.className = 'cierre';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            btn.style.background = '';
 
             elements.jornadaTitle.textContent = 'Jornada activa';
             elements.jornadaInfo.textContent = durLabel;
@@ -228,13 +228,13 @@ export const renderer = {
             stats[c.platform].total += c.amount;
         });
 
-        // Mejora 2: ordenar por total descendente
+        // Ordenar por total descendente
         const sorted = Object.entries(stats).sort(([, a], [, b]) => b.total - a.total);
 
         elements.plataformasStats.innerHTML = sorted.map(([platformId, data]) => {
             const norm = normalizePlatform(platformId, state.settings.plataformas);
             const statusLabel = norm.isActiva ? '' : '<span class="plat-not-active">• No activa</span>';
-            
+
             return `
                 <div class="platform-stat-row">
                     <div>
@@ -269,13 +269,14 @@ export const renderer = {
             `;
         }).join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Añade tu primera carrera</div>';
 
-        this.initSmartFAB();
+        // ✅ CORRECCIÓN: pasar state como parámetro en lugar de usar require()
+        this.initSmartFAB(state);
     },
 
-    initSmartFAB() {
+    // ✅ CORRECCIÓN: recibe state como parámetro, eliminando el require() incompatible con ES modules
+    initSmartFAB(state) {
         const fab = document.getElementById('fabNewRace');
         const target = document.querySelector('#registrarCarreraCard');
-        const state = require('../../state/store.js').store.getState(); // Acceso directo para estado actual
 
         if (!fab || !target) return;
 
@@ -325,7 +326,7 @@ export const renderer = {
 
     updateAddButton(state) {
         if (!elements.addCarrera) return;
-        
+
         let canAdd = false;
         let label = 'REGISTRAR';
 
