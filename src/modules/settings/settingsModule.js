@@ -34,7 +34,11 @@ export const settingsModule = {
         store.setState({ settings: newSettings });
 
         if (state.user) {
-            await firestoreService.saveSettings(state.user.uid, newSettings);
+            try {
+                await firestoreService.saveSettings(state.user.uid, newSettings);
+            } catch (error) {
+                console.warn("Failed to sync settings to Firestore:", error);
+            }
         }
 
         this.close();
@@ -60,13 +64,18 @@ export const settingsModule = {
         const id = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
         const state = store.getState();
 
-        const newPlataformas = [...state.settings.plataformas, { id, name: name.toUpperCase(), color }];
+        const currentPlataformas = state.settings.plataformas || [];
+        const newPlataformas = [...currentPlataformas, { id, name: name.toUpperCase(), color }];
         const newSettings = { ...state.settings, plataformas: newPlataformas };
 
         store.setState({ settings: newSettings });
 
         if (state.user) {
-            await firestoreService.saveSettings(state.user.uid, newSettings);
+            try {
+                await firestoreService.saveSettings(state.user.uid, newSettings);
+            } catch (error) {
+                console.warn("Failed to sync settings to Firestore:", error);
+            }
         }
 
         this.renderPlatformManager(newPlataformas);
@@ -82,7 +91,11 @@ export const settingsModule = {
         store.setState({ settings: newSettings });
 
         if (state.user) {
-            await firestoreService.saveSettings(state.user.uid, newSettings);
+            try {
+                await firestoreService.saveSettings(state.user.uid, newSettings);
+            } catch (error) {
+                console.warn("Failed to sync settings to Firestore:", error);
+            }
         }
 
         this.renderPlatformManager(newPlataformas);
@@ -108,7 +121,11 @@ export const settingsModule = {
         store.setState({ settings: newSettings });
 
         if (state.user) {
-            await firestoreService.saveSettings(state.user.uid, newSettings);
+            try {
+                await firestoreService.saveSettings(state.user.uid, newSettings);
+            } catch (error) {
+                console.warn("Failed to sync settings to Firestore:", error);
+            }
         }
 
         this.renderPlatformManager(newPlataformas);

@@ -8,8 +8,8 @@ import { formatCurrency } from '../../utils/format.js';
 
 export const historicoModule = {
     async open() {
-        document.getElementById('appContent').style.display = 'none';
-        document.getElementById('historicoSection').style.display = 'block';
+        // Now acting as a modal overlay, so we don't hide appContent
+        document.getElementById('historicoSection').style.display = 'flex';
 
         const state = store.getState();
         if (state.user) {
@@ -23,8 +23,15 @@ export const historicoModule = {
     },
 
     close() {
-        document.getElementById('appContent').style.display = 'block';
         document.getElementById('historicoSection').style.display = 'none';
+        
+        // Reset nav to Hoy visually when modal closes
+        const navBtns = document.querySelectorAll('.nav-btn');
+        if (navBtns.length > 0) {
+            navBtns.forEach(b => b.classList.remove('active'));
+            const navHoy = document.getElementById('navHoy');
+            if (navHoy) navHoy.classList.add('active');
+        }
     },
 
     render(data) {

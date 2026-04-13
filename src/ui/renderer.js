@@ -1,22 +1,24 @@
-/**
- * src/ui/renderer.js
- * Capa de presentación (UI) - Ultra-Premium Edition.
- */
-
 import { formatCurrency, normalizePlatform } from '../utils/format.js';
 
 const elements = {
     currentDate: document.getElementById('currentDate'),
     metaDisplay: document.getElementById('metaDisplay'),
     porcentajeDisplay: document.getElementById('porcentajeDisplay'),
-    progressFillMeta: document.getElementById('progressFillMeta'),
+    remainingDisplay: document.getElementById('remainingDisplay'),
+    progressCircleMeta: document.getElementById('progressCircleMeta'),
     gananciaEfectivo: document.getElementById('gananciaEfectivo'),
     gananciaDigital: document.getElementById('gananciaDigital'),
     consolidadoNeto: document.getElementById('consolidadoNeto'),
+    // New UI elements
+    statRides: document.getElementById('statRides'),
+    statTime: document.getElementById('statTime'),
+    statPromedio: document.getElementById('statPromedio'),
+    heroMetaLabel: document.getElementById('heroMetaLabel'),
+    streakText: document.getElementById('streakText'),
+    actNoJornada: document.getElementById('actNoJornada'),
+    actJornada: document.getElementById('actJornada'),
     jornadaBtn: document.getElementById('jornadaBtn'),
-    jornadaInfo: document.getElementById('jornadaInfo'),
-    jornadaTitle: document.getElementById('jornadaTitle'),
-    jornadaIcon: document.getElementById('jornadaIcon'),
+    // Legacy refs (still used by some modules)
     appContent: document.getElementById('appContent'),
     platformButtonsContainer: document.getElementById('platformButtonsContainer'),
     paymentButtons: document.getElementById('paymentButtons'),
@@ -31,81 +33,94 @@ const elements = {
 export const renderer = {
     render(state) {
         this.updateDate();
-        this.updateJornadaUI(state);
-        this.renderPlatformButtons(state);
-        this.updatePaymentButtons(state);
         this.updateMetaProgress(state);
         this.updateConsolidados(state);
+        this.updateStatsRow(state);
+        this.updateGoalCards(state);
+        this.updateActionButtons(state);
         this.updateSummary(state);
         this.updateCarrerasList(state);
         this.updateGastosList(state);
         this.updateAddButton(state);
+        this.updateRenderPlatformButtons(state);
+        this.updatePaymentButtons(state);
     },
 
     updateDate() {
         const now = new Date();
         if (elements.currentDate) {
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            elements.currentDate.textContent = now.toLocaleDateString('es-ES', options).toUpperCase();
+            elements.currentDate.textContent = now.toLocaleDateString('es-ES', options);
         }
     },
 
-    updateJornadaUI(state) {
-        if (!elements.jornadaBtn) return;
+    updateActionButtons(state) {
+        const noJ = elements.actNoJornada;
+        const yesJ = elements.actJornada;
+        if (!noJ || !yesJ) return;
 
-        const btn = elements.jornadaBtn;
-        const card = document.getElementById('jornadaMainCard');
-        const fab = document.getElementById('fabNewRace');
-
-        if (state.jornadaIniciada && state.jornadaInicio) {
-            const startTime = new Date(state.jornadaInicio);
-            const diffMs = Date.now() - startTime.getTime();
-            const totalMins = Math.floor(diffMs / 60000);
-            const hours = Math.floor(totalMins / 60);
-            const mins = totalMins % 60;
-            const durLabel = hours > 0 ? `${hours}h ${mins}m activa` : totalMins > 0 ? `${totalMins}m activa` : `Recién iniciada`;
-
-            btn.textContent = 'CERRAR';
-            btn.className = 'cierre';
-            btn.style.color = '';
-            btn.style.borderColor = '';
-            btn.style.background = '';
-
-            elements.jornadaTitle.textContent = 'Jornada activa';
-            elements.jornadaInfo.textContent = durLabel;
-            elements.jornadaIcon.style.background = 'var(--emerald-glow)';
-            elements.jornadaIcon.style.color = 'var(--emerald)';
-
-            if (card) card.classList.remove('jornada-hero');
-            elements.appContent.classList.remove('app-disabled');
-
-            // FAB para AGREGAR carrera (Icono PLUS)
-            if (fab) {
-                fab.classList.remove('fab-start');
-                fab.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-            }
+        if (state.jornadaIniciada) {
+            noJ.style.display = 'none';
+            yesJ.style.display = 'block';
         } else {
-            btn.textContent = 'INICIAR JORNADA';
-            btn.className = 'btn-ultra btn-hero';
-            btn.style = ''; // Limpiar estilos previos
-
-            elements.jornadaTitle.textContent = 'Sin jornada';
-            elements.jornadaInfo.textContent = 'Presiona para comenzar';
-            elements.jornadaIcon.style.background = 'rgba(255,255,255,0.05)';
-            elements.jornadaIcon.style.color = 'rgba(255,255,255,0.3)';
-
-            if (card) card.classList.add('jornada-hero');
-            elements.appContent.classList.add('app-disabled');
-
-            // FAB para INICIAR (Icono CLOCK/PLAY)
-            if (fab) {
-                fab.classList.add('fab-start', 'visible');
-                fab.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-            }
+            noJ.style.display = 'block';
+            yesJ.style.display = 'none';
         }
     },
 
-    renderPlatformButtons(state) {
+    updateStatsRow(state) {
+        // Carreras del día
+        if (elements.statRides) {
+            elements.statRides.textContent = state.carreras.length;
+        }
+
+        // Tiempo de jornada
+        if (elements.statTime && state.jornadaInicio) {
+            const diffMs = Date.now() - new Date(state.jornadaInicio).getTime();
+            const totalMins = Math.floor(diffMs / 60000);
+            const h = Math.floor(totalMins / 60);
+            const m = totalMins % 60;
+            const hSpan = '<span style="color:var(--emerald); font-size: 0.8em; margin-left: 1px;">h</span>';
+            const mSpan = '<span style="color:var(--emerald); font-size: 0.8em; margin-left: 1px;">m</span>';
+            elements.statTime.innerHTML = h > 0 ? `${h}${hSpan} ${m}${mSpan}` : `${m}${mSpan}`;
+        } else if (elements.statTime) {
+            elements.statTime.innerHTML = `0<span style="color:var(--emerald); font-size: 0.8em; margin-left: 1px;">h</span> 0<span style="color:var(--emerald); font-size: 0.8em; margin-left: 1px;">m</span>`;
+        }
+
+        // Promedio por carrera (CAMBIO 6)
+        const statPromedio = document.getElementById('statPromedio');
+        if (statPromedio) {
+            const totalNeto = state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0);
+            const avgPerRide = state.carreras.length > 0
+                ? Math.round(totalNeto / state.carreras.length)
+                : 0;
+            statPromedio.textContent = `$${(avgPerRide / 1000).toFixed(1)}k`;
+        }
+    },
+
+    updateGoalCards(state) {
+        const meta = state.settings.meta || 0;
+        const neto = state.consolidadoNeto || 0;
+        const restante = Math.max(0, meta - neto);
+        const pct = meta > 0 ? Math.min(100, (neto / meta) * 100) : 0;
+
+        if (elements.statGoal) {
+            elements.statGoal.textContent = formatCurrency(meta);
+        }
+        if (elements.statRemaining) {
+            elements.statRemaining.textContent = formatCurrency(restante);
+            elements.statRemaining.style.color = pct >= 100 ? 'var(--emerald)' : 'var(--gold)';
+        }
+        if (elements.goalProgressBar) {
+            elements.goalProgressBar.style.width = `${pct}%`;
+            elements.goalProgressBar.style.background = pct >= 100 ? 'var(--gold)' : 'var(--emerald)';
+        }
+        if (elements.goalProgressPct) {
+            elements.goalProgressPct.textContent = `${Math.round(pct)}%`;
+        }
+    },
+
+    updateRenderPlatformButtons(state) {
         const container = elements.platformButtonsContainer;
         if (!container) return;
         container.innerHTML = '';
@@ -166,19 +181,41 @@ export const renderer = {
         const totalCarrerasNeto = state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0);
         const totalGastos = state.gastos.reduce((sum, g) => sum + g.monto, 0);
         const totalNeto = totalCarrerasNeto - totalGastos;
-        const meta = state.settings.meta;
+        const meta = state.settings.meta || 270000;
         const porcentaje = meta > 0 ? Math.round((totalNeto / meta) * 100) : 0;
+        const remaining = meta > totalNeto ? meta - totalNeto : 0;
 
-        if (elements.metaDisplay) elements.metaDisplay.textContent = formatCurrency(meta);
-        if (elements.porcentajeDisplay) elements.porcentajeDisplay.textContent = `${porcentaje}%`;
-        if (elements.progressFillMeta) {
-            elements.progressFillMeta.style.width = `${Math.min(100, Math.max(0, porcentaje))}%`;
+        if (elements.heroMetaLabel) {
+            elements.heroMetaLabel.textContent = `META · $${(meta / 1000).toFixed(0)}K`;
+        }
+
+        if (elements.consolidadoNeto) {
+            elements.consolidadoNeto.textContent = formatCurrency(totalNeto);
+        }
+
+        if (elements.porcentajeDisplay) {
+            elements.porcentajeDisplay.textContent = `${porcentaje}%`;
+        }
+
+        if (elements.remainingDisplay) {
+            elements.remainingDisplay.textContent = remaining > 0 
+                ? `$${(remaining / 1000).toFixed(0)}k restante` 
+                : 'Meta lograda 🎉';
+        }
+
+        if (elements.progressCircleMeta) {
+            // Arc = 5/6 of circle (300°), r=88: 2π×88×(5/6) = 461.81
+            // dasharray="461.81 552.92", so offset 461.81=empty, 0=full
+            const arcLength = 461.81;
+            const cappedPercent = Math.min(100, Math.max(0, porcentaje));
+            elements.progressCircleMeta.style.strokeDashoffset = arcLength - (cappedPercent / 100) * arcLength;
+
             if (porcentaje >= 100) {
-                elements.progressFillMeta.style.background = 'linear-gradient(90deg, #F59E0B, #EAB308)';
-                elements.progressFillMeta.style.boxShadow = '0 0 15px var(--gold-glow)';
+                elements.progressCircleMeta.style.filter = 'drop-shadow(0 0 14px var(--gold-glow))';
+                elements.progressCircleMeta.style.stroke = 'var(--gold)';
             } else {
-                elements.progressFillMeta.style.background = 'linear-gradient(90deg, var(--emerald), #34D399)';
-                elements.progressFillMeta.style.boxShadow = '0 0 15px var(--emerald-glow)';
+                elements.progressCircleMeta.style.filter = 'drop-shadow(0 0 10px var(--emerald-glow))';
+                elements.progressCircleMeta.style.stroke = 'url(#gaugeGradient)';
             }
         }
     },
@@ -199,23 +236,6 @@ export const renderer = {
         if (elements.consolidadoNeto) {
             elements.consolidadoNeto.textContent = formatCurrency(totalNeto);
             elements.consolidadoNeto.style.opacity = '1';
-        }
-
-        // Badge de número de carreras
-        const badgeId = 'ridecountBadge';
-        let badge = document.getElementById(badgeId);
-        const heroCard = elements.consolidadoNeto ? elements.consolidadoNeto.closest('.glass-card') : null;
-        if (heroCard && state.jornadaIniciada) {
-            if (!badge) {
-                badge = document.createElement('div');
-                badge.id = badgeId;
-                badge.className = 'ride-count-badge';
-                heroCard.appendChild(badge);
-            }
-            const count = state.carreras.length;
-            badge.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${count} ${count === 1 ? 'carrera' : 'carreras'} hoy`;
-        } else if (badge) {
-            badge.remove();
         }
     },
 

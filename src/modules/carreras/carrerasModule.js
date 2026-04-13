@@ -237,7 +237,9 @@ export const carrerasModule = {
             });
             syncJornadaToFirestore();
             showToast('Carrera eliminada', 'success');
+            return true;
         }
+        return false;
     },
 
     async clearAll() {
