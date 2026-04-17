@@ -172,13 +172,52 @@ export const carrerasModule = {
             navigator.share({
                 title: 'Reporte RutaPro',
                 text: report
-            }).catch(console.error);
-        } else {
-            navigator.clipboard.writeText(report).then(() => {
-                showToast('Reporte copiado al portapapeles', 'success');
-            }).catch(() => {
-                showToast('Error al copiar el reporte', 'error');
+            }).then(() => {
+                // Share exitoso
+            }).catch((e) => {
+                console.error('Error usando navigator.share:', e);
+                // Solo hace fallback si el usuario no canceló la acción
+                if (e.name !== 'AbortError') {
+                    copyToClipboard(report);
+                }
             });
+        } else {
+            // navigator.share no disponible, normalmente pasa si se accede por IP en vez de localhost/HTTPS
+            if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+                showToast('Share nativo requiere HTTPS. Copiando texto...', 'error');
+            }
+            copyToClipboard(report);
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Reporte copiado al portapapeles', 'success');
+                }).catch(() => {
+                    fallbackCopyTextToClipboard(text);
+                });
+            } else {
+                fallbackCopyTextToClipboard(text);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed'; // Evita scroll
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Reporte copiado al portapapeles', 'success');
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                showToast('Error al copiar el reporte', 'error');
+            }
+            document.body.removeChild(textArea);
         }
     },
 

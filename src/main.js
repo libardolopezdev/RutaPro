@@ -11,6 +11,7 @@ import { authModule } from './modules/auth/authModule.js';
 import { carrerasModule } from './modules/carreras/carrerasModule.js';
 import { gastosModule } from './modules/gastos/gastosModule.js';
 import { historicoModule } from './modules/historico/historicoModule.js';
+import { estadisticasModule } from './modules/estadisticas/estadisticasModule.js';
 import { settingsModule } from './modules/settings/settingsModule.js';
 import { notificationsModule } from './modules/notifications/notificationsModule.js';
 import { haptics, springPress, animateCounter, shakeElement, launchConfetti } from './utils/haptics.js';
@@ -48,7 +49,26 @@ async function initApp() {
 
     authModule.init();
     notificationsModule.init();
+
+    // ── Cargar Tema Persistente ──
+    const savedTheme = localStorage.getItem('rutapro_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
     setupEventListeners();
+}
+
+/**
+ * Actualiza el icono del header según el tema activo
+ */
+function updateThemeIcon(theme) {
+    const icon = document.getElementById('themeIconHeader');
+    if (!icon) return;
+    if (theme === 'dark') {
+        icon.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5a7 7 0 0 1-7.4-7.4c.5.1 1 .1 1.5.1Z"/>';
+    } else {
+        icon.innerHTML = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>';
+    }
 }
 
 function setupEventListeners() {
@@ -58,7 +78,19 @@ function setupEventListeners() {
     };
     const openModal = (id) => {
         const m = document.getElementById(id);
-        if (m) m.style.display = 'flex';
+        if (m) {
+            m.style.display = 'flex';
+            if (id === 'carriageModal') {
+                setTimeout(() => {
+                    const input = document.getElementById('amountInput');
+                    if (input) {
+                        input.focus();
+                        // Forzar scroll al tope si es necesario
+                        input.scrollIntoView({ block: 'center' });
+                    }
+                }, 150);
+            }
+        }
     };
     const closeModal = (id) => {
         const m = document.getElementById(id);
@@ -66,14 +98,82 @@ function setupEventListeners() {
     };
 
     // ── Jornada ──
-    bind('jornadaBtn', 'click', () => {
+    const promptIniciarJornada = () => {
+        const state = store.getState();
+        const meta = state.settings.meta || 270000;
+        document.getElementById('startJourneyMetaDisplay').textContent = `$${(meta/1000).toFixed(0)}K`;
+        openModal('startJourneyModal');
+    };
+
+    bind('jornadaBtn', 'click', promptIniciarJornada);
+
+    bind('btnConfirmStart', 'click', () => {
+        closeModal('startJourneyModal');
         carrerasModule.toggleJornada();
-        // Abrir el modal de jornada activa al iniciar
-        setTimeout(() => {
-            const state = store.getState();
-            if (state.jornadaIniciada) openJornadaActivaModal();
-        }, 200);
+        // NOTA: Ya no abrimos el modal secundario automáticamente
+        // para no ocultar el nuevo Dashboard Premium.
     });
+
+    bind('btnCancelStart', 'click', () => closeModal('startJourneyModal'));
+    
+    bind('btnConfigureMetaStart', 'click', () => {
+        const state = store.getState();
+        const currentMeta = state.settings.meta || 270000;
+        
+        // Setup modal
+        const input = document.getElementById('customMetaInput');
+        if (input) input.value = currentMeta;
+        
+        // Sync active preset
+        const presets = document.querySelectorAll('.meta-preset-card');
+        presets.forEach(p => {
+            p.classList.toggle('active', parseInt(p.dataset.val) === currentMeta);
+        });
+
+        closeModal('startJourneyModal');
+        openModal('configMetaModal');
+    });
+
+    // ── Configurar Meta Modal Logic ──
+    const presets = document.querySelectorAll('.meta-preset-card');
+    const customInput = document.getElementById('customMetaInput');
+
+    presets.forEach(card => {
+        card.addEventListener('click', () => {
+            const val = card.dataset.val;
+            if (customInput) customInput.value = val;
+            
+            presets.forEach(p => p.classList.remove('active'));
+            card.classList.add('active');
+        });
+    });
+
+    if (customInput) {
+        customInput.addEventListener('input', () => {
+            const val = parseInt(customInput.value);
+            presets.forEach(p => {
+                p.classList.toggle('active', parseInt(p.dataset.val) === val);
+            });
+        });
+    }
+
+    bind('btnCloseConfigMeta', 'click', () => {
+        closeModal('configMetaModal');
+        openModal('startJourneyModal');
+    });
+
+    bind('btnSaveMeta', 'click', () => {
+        const val = parseInt(customInput.value) || 270000;
+        store.setState({ settings: { meta: val } });
+        
+        // Update display on previous modal
+        const display = document.getElementById('startJourneyMetaDisplay');
+        if (display) display.textContent = `$${(val/1000).toFixed(0)}K`;
+
+        closeModal('configMetaModal');
+        openModal('startJourneyModal');
+    });
+
 
     bind('btnFinalizarJornada', 'click', () => {
         const state = store.getState();
@@ -100,7 +200,7 @@ function setupEventListeners() {
     bind('fabNewRace', 'click', () => {
         const state = store.getState();
         if (state.jornadaIniciada) openModal('carriageModal');
-        else carrerasModule.toggleJornada();
+        else promptIniciarJornada();
     });
 
     // ── Carrera (con haptics + spring) ──
@@ -142,6 +242,8 @@ function setupEventListeners() {
     const formatInput = (e) => {
         const value = e.target.value.replace(/\D/g, '');
         if (value) e.target.value = new Intl.NumberFormat('es-CO').format(value);
+        // Trigger button validation real-time
+        renderer.updateAddButton(store.getState());
     };
     bind('amountInput', 'input', formatInput);
     bind('gastoMonto', 'input', formatInput);
@@ -149,11 +251,15 @@ function setupEventListeners() {
 
     // ── Delegación clicks dinámicos ──
     document.addEventListener('click', (e) => {
-        const pChip = e.target.closest('.p-chip');
-        if (pChip) carrerasModule.selectPlatform(pChip.dataset.platform);
+        const platformChip = e.target.closest('[data-platform]');
+        if (platformChip) {
+            carrerasModule.selectPlatform(platformChip.dataset.platform);
+        }
 
         const payBtn = e.target.closest('[data-payment]');
-        if (payBtn) carrerasModule.selectPayment(payBtn.dataset.payment);
+        if (payBtn) {
+            carrerasModule.selectPayment(payBtn.dataset.payment);
+        }
 
         const delRide = e.target.closest('.delete-btn');
         if (delRide) {
@@ -191,6 +297,7 @@ function setupEventListeners() {
 
     // ── Navegación ──
     bind('navHoy', 'click', () => {
+        closeModal && closeModal('statsModal');
         historicoModule.close();
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('navHoy').classList.add('active');
@@ -200,15 +307,10 @@ function setupEventListeners() {
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('navHistorico').classList.add('active');
     });
-    bind('navGastos', 'click', () => {
-        openModal('gastoModal');
+    bind('navEstadisticas', 'click', () => {
+        estadisticasModule.open();
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('navGastos').classList.add('active');
-    });
-    bind('navSettings', 'click', () => {
-        settingsModule.open();
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('navSettings').classList.add('active');
+        document.getElementById('navEstadisticas').classList.add('active');
     });
     bind('headerSettingsBtn', 'click', () => settingsModule.open());
 
@@ -223,9 +325,9 @@ function setupEventListeners() {
     });
     bind('jornadaModalCloseBtn', 'click', () => closeJornadaActivaModal());
     bind('jornadaModalSettingsBtn', 'click', () => { closeJornadaActivaModal(); settingsModule.open(); });
+    bind('jmNavHoy', 'click', () => { closeJornadaActivaModal(); });
     bind('jmNavReportes', 'click', () => { closeJornadaActivaModal(); historicoModule.open(); });
-    bind('jmNavAjustes', 'click', () => { closeJornadaActivaModal(); settingsModule.open(); });
-    bind('jmNavGastos', 'click', () => { closeJornadaActivaModal(); openModal('gastoModal'); });
+    bind('jmNavEstadisticas', 'click', () => { closeJornadaActivaModal(); estadisticasModule.open(); });
 
     // Abrir modal jornada activa al tocar en hero card si hay jornada
     const heroCard = document.querySelector('.glass-card');
@@ -237,28 +339,38 @@ function setupEventListeners() {
     }
 
     // ── Stat cards interactivos ──
-    bind('statCardRides', 'click', () => openCarrerasDetail());
-    bind('statCardTime', 'click', () => openTiempoDetail());
-    bind('streakBar', 'click', () => openRachaDetail());
+    bind('pillCarreras', 'click', () => openCarrerasDetail());
+    bind('pillTiempo', 'click', () => openTiempoDetail());
 
     // ── Cerrar modales de detalle ──
     bind('closeCarrerasDetail', 'click', () => closeModal('carrerasDetailModal'));
     bind('closeTiempoDetail', 'click', () => closeModal('tiempoDetailModal'));
     bind('closeRachaDetail', 'click', () => closeModal('rachaDetailModal'));
+    bind('closeCarriage', 'click', () => closeModal('carriageModal'));
+    bind('closeGasto', 'click', () => closeModal('gastoModal'));
+    bind('closeSummary', 'click', () => closeModal('summaryModal'));
+    bind('closeSettings', 'click', () => closeModal('settingsModal'));
+    bind('closeHistorico', 'click', () => historicoModule.close());
+    bind('notifCloseBtn', 'click', () => closeModal('notificationModal'));
 
     // Cerrar al hacer clic en el overlay
-    ['carrerasDetailModal', 'tiempoDetailModal', 'rachaDetailModal', 'historicoSection'].forEach(id => {
+    ['carrerasDetailModal', 'tiempoDetailModal', 'rachaDetailModal', 'historicoSection', 'statsModal'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('click', (e) => {
             if (e.target === el) {
                 if (id === 'historicoSection') {
                     historicoModule.close();
+                } else if (id === 'statsModal') {
+                    closeModal('statsModal');
                 } else {
                     closeModal(id);
                 }
             }
         });
     });
+
+    // Cerrar modal de estadísticas desde su botón
+    bind('closeStats', 'click', () => closeModal('statsModal'));
 
     // ── Settings ──
     bind('saveSettings', 'click', () => {
@@ -274,15 +386,16 @@ function setupEventListeners() {
         }
     });
 
-    // ── Theme Toggle (ahora dentro de Ajustes) ──
-    bind('themeToggleBtn', 'click', () => {
+    // ── Theme Toggle (Header) ──
+    bind('headerThemeToggle', 'click', () => {
         const html = document.documentElement;
-        const isDark = html.getAttribute('data-theme') === 'dark';
-        html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        const icon = document.getElementById('themeIcon');
-        const label = document.getElementById('themeLabel');
-        if (icon) icon.textContent = isDark ? '☀️' : '🌙';
-        if (label) label.textContent = isDark ? 'Modo Claro activo' : 'Modo Oscuro activo';
+        const current = html.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('rutapro_theme', next);
+        updateThemeIcon(next);
+        haptics.selectionChanged();
     });
 
     // ── Logout ──
@@ -345,7 +458,9 @@ function syncJornadaActivaModal(state) {
     const meta = state.settings.meta || 270000;
     const pct = Math.min(100, meta > 0 ? Math.round((neto / meta) * 100) : 0);
     const restante = Math.max(0, meta - neto);
-    const metaK = (meta / 1000).toFixed(0);
+    
+    // Formateo seguro de Meta (si es mayor a 1000, mostrar K)
+    const metaDisplay = meta >= 1000 ? `${(meta / 1000).toFixed(0)}K` : meta.toString();
 
     // Gauge arc (431 = longitud del arco al 100%)
     const arcLen = 431;
@@ -353,7 +468,7 @@ function syncJornadaActivaModal(state) {
 
     // Textos
     const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setText('jmMetaLabel', `META · $${metaK}K`);
+    setText('jmMetaLabel', `META · $${metaDisplay}`);
     setText('jmBalanceAmount', `$${neto.toLocaleString('es-CO')}`);
     setText('jmPctLabel', `${pct}%`);
     setText('jmRestLabel', restante > 0 ? `$${(restante / 1000).toFixed(0)}k restante` : 'Meta cumplida 🎉');

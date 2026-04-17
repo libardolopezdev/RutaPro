@@ -1,5 +1,5 @@
 import { formatCurrency, normalizePlatform } from '../utils/format.js';
-
+import { updateGreeting } from '../utils/greeting.js';
 const elements = {
     currentDate: document.getElementById('currentDate'),
     metaDisplay: document.getElementById('metaDisplay'),
@@ -8,11 +8,12 @@ const elements = {
     progressCircleMeta: document.getElementById('progressCircleMeta'),
     gananciaEfectivo: document.getElementById('gananciaEfectivo'),
     gananciaDigital: document.getElementById('gananciaDigital'),
+    jmGananciaEfectivo: document.getElementById('jmGananciaEfectivo'),
+    jmGananciaDigital: document.getElementById('jmGananciaDigital'),
     consolidadoNeto: document.getElementById('consolidadoNeto'),
     // New UI elements
-    statRides: document.getElementById('statRides'),
-    statTime: document.getElementById('statTime'),
-    statPromedio: document.getElementById('statPromedio'),
+    statRides: null,
+    statTime: null,
     heroMetaLabel: document.getElementById('heroMetaLabel'),
     streakText: document.getElementById('streakText'),
     actNoJornada: document.getElementById('actNoJornada'),
@@ -44,6 +45,7 @@ export const renderer = {
         this.updateAddButton(state);
         this.updateRenderPlatformButtons(state);
         this.updatePaymentButtons(state);
+        updateGreeting(state);
     },
 
     updateDate() {
@@ -87,15 +89,6 @@ export const renderer = {
             elements.statTime.innerHTML = `0<span style="color:var(--emerald); font-size: 0.8em; margin-left: 1px;">h</span> 0<span style="color:var(--emerald); font-size: 0.8em; margin-left: 1px;">m</span>`;
         }
 
-        // Promedio por carrera (CAMBIO 6)
-        const statPromedio = document.getElementById('statPromedio');
-        if (statPromedio) {
-            const totalNeto = state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0);
-            const avgPerRide = state.carreras.length > 0
-                ? Math.round(totalNeto / state.carreras.length)
-                : 0;
-            statPromedio.textContent = `$${(avgPerRide / 1000).toFixed(1)}k`;
-        }
     },
 
     updateGoalCards(state) {
@@ -124,11 +117,17 @@ export const renderer = {
         const container = elements.platformButtonsContainer;
         if (!container) return;
         container.innerHTML = '';
-        (state.settings.plataformas || []).forEach(plat => {
+        const plataformas = state.settings.plataformas || [];
+        plataformas.forEach((plat, index) => {
             const btn = document.createElement('div');
             btn.className = `p-chip ${state.selectedPlatform === plat.id ? 'active' : ''}`;
             btn.dataset.platform = plat.id;
             btn.innerHTML = `<span>${plat.name}</span>`;
+
+            // Si es el ltimo item y el total es impar, ocupa 2 columnas
+            if (index === plataformas.length - 1 && plataformas.length % 2 !== 0) {
+                btn.style.gridColumn = 'span 2';
+            }
 
             const isUber = plat.id === 'uber';
             const pColor = isUber ? 'var(--uber-color)' : plat.color;
@@ -143,6 +142,7 @@ export const renderer = {
             } else {
                 btn.style.borderColor = 'var(--border-glass)';
                 btn.style.color = 'var(--text-secondary)';
+                btn.style.background = 'var(--surface-glass)';
             }
             container.appendChild(btn);
         });
@@ -185,8 +185,9 @@ export const renderer = {
         const porcentaje = meta > 0 ? Math.round((totalNeto / meta) * 100) : 0;
         const remaining = meta > totalNeto ? meta - totalNeto : 0;
 
+        // New layout: "/ $Xk meta"
         if (elements.heroMetaLabel) {
-            elements.heroMetaLabel.textContent = `META · $${(meta / 1000).toFixed(0)}K`;
+            elements.heroMetaLabel.textContent = `/ $${(meta / 1000).toFixed(0)}k meta`;
         }
 
         if (elements.consolidadoNeto) {
@@ -197,15 +198,112 @@ export const renderer = {
             elements.porcentajeDisplay.textContent = `${porcentaje}%`;
         }
 
+        // Motivational row (Premium Overhaul)
         if (elements.remainingDisplay) {
-            elements.remainingDisplay.textContent = remaining > 0 
-                ? `$${(remaining / 1000).toFixed(0)}k restante` 
-                : 'Meta lograda 🎉';
+            const metaStatRides = document.getElementById('metaStatRides');
+            const metaStatTime = document.getElementById('metaStatTime');
+            const pillTiempoStatus = document.getElementById('pillTiempoStatus');
+            const motivIconSvg = document.getElementById('heroMotivIconSvg');
+            const motivIconContainer = document.getElementById('heroMotivIconContainer');
+
+            // 1. Update Badge Values
+            if (metaStatRides) metaStatRides.textContent = state.carreras.length;
+            if (metaStatTime) {
+                if (state.jornadaInicio) {
+                    const mins = Math.floor((Date.now() - new Date(state.jornadaInicio).getTime()) / 60000);
+                    const h = Math.floor(mins / 60), m = mins % 60;
+                    metaStatTime.textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                } else {
+                    metaStatTime.textContent = '0h';
+                }
+            }
+
+            // 2. Status Dot Logic
+            const pillTiempoDefault = document.getElementById('pillTiempoDefault');
+            if (pillTiempoStatus && pillTiempoDefault) {
+                if (state.jornadaIniciada) {
+                    pillTiempoStatus.style.display = 'flex';
+                    pillTiempoDefault.style.display = 'none';
+                } else {
+                    pillTiempoStatus.style.display = 'none';
+                    pillTiempoDefault.style.display = 'block';
+                }
+            }
+
+            // 3. Motivational Message Logic
+            if (porcentaje >= 100) {
+                elements.remainingDisplay.textContent = '¡Meta lograda!';
+                elements.remainingDisplay.style.color = 'var(--emerald)';
+                if (motivIconContainer) {
+                    motivIconContainer.className = 'icon-box small emerald';
+                    motivIconContainer.style.color = 'var(--emerald)';
+                }
+                if (motivIconSvg) motivIconSvg.innerHTML = '<path d="m20 8-8 5-8-5V6l8 5 8-5v2Z"/><path d="M4 10h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"/><path d="M12 10v10"/><path d="m16 14-4 4-4-4"/>'; // Confetti/Party icon
+            } else {
+                if (motivIconContainer) {
+                    motivIconContainer.className = 'icon-box small';
+                    motivIconContainer.style.color = 'var(--gold)';
+                }
+                if (motivIconSvg) motivIconSvg.innerHTML = '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.27 1.27L3 12l5.813 1.912a2 2 0 0 1 1.27 1.27L12 21l1.912-5.813a2 2 0 0 1 1.27-1.27L21 12l-5.813-1.912a2 2 0 0 1-1.27-1.27L12 3Z"/>'; // Star/Energy
+                
+                if (remaining > 0) {
+                    const totalCarrerasNeto = state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0);
+                    const avgPerRide = state.carreras.length > 0 ? totalCarrerasNeto / state.carreras.length : 0;
+                    
+                    if (avgPerRide > 0) {
+                        const ridesLeft = Math.ceil(remaining / avgPerRide);
+                        const label = porcentaje >= 85 ? '¡CASI!' : 'VAMOS';
+                        elements.remainingDisplay.textContent = `${label} · ~${ridesLeft} carrera${ridesLeft !== 1 ? 's' : ''} más`;
+                    } else {
+                        elements.remainingDisplay.textContent = `$${(remaining / 1000).toFixed(0)}k restante`;
+                    }
+                } else {
+                    elements.remainingDisplay.textContent = `$${(remaining / 1000).toFixed(0)}k restante`;
+                }
+                elements.remainingDisplay.style.color = 'var(--gold)';
+            }
+        }
+
+        // Dynamic badge update
+        const badgeIcon = document.getElementById('heroProgressBadgeIcon');
+        const badgeLabel = document.getElementById('heroProgressBadgeLabel');
+        const badge = document.getElementById('heroProgressBadge');
+        if (badge && badgeIcon && badgeLabel) {
+            const svg = badgeIcon.querySelector('svg');
+            if (porcentaje >= 100) {
+                if (svg) svg.innerHTML = '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>';
+                badgeLabel.textContent = '¡META!';
+                badge.style.background = 'rgba(234,179,8,0.15)';
+                badge.style.borderColor = 'rgba(234,179,8,0.4)';
+                badgeLabel.style.color = 'var(--gold)';
+            } else if (porcentaje >= 85) {
+                if (svg) svg.innerHTML = '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>';
+                badgeLabel.textContent = 'CASI';
+                badge.style.background = 'rgba(239,68,68,0.12)';
+                badge.style.borderColor = 'rgba(239,68,68,0.35)';
+                badgeLabel.style.color = '#f87171';
+            } else if (porcentaje >= 50) {
+                if (svg) svg.innerHTML = '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.27 1.27L3 12l5.813 1.912a2 2 0 0 1 1.27 1.27L12 21l1.912-5.813a2 2 0 0 1 1.27-1.27L21 12l-5.813-1.912a2 2 0 0 1-1.27-1.27L12 3Z"/>';
+                badgeLabel.textContent = 'VAMOS';
+                badge.style.background = 'rgba(16,185,129,0.12)';
+                badge.style.borderColor = 'rgba(16,185,129,0.3)';
+                badgeLabel.style.color = 'var(--emerald)';
+            } else if (porcentaje > 0) {
+                if (svg) svg.innerHTML = '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.5-1 1-4c2 0 3 .5 3 .5"/><path d="M15 9h5s1 .5 4 1c0 2-.5 3-.5 3"/>';
+                badgeLabel.textContent = 'EN RUTA';
+                badge.style.background = 'rgba(16,185,129,0.08)';
+                badge.style.borderColor = 'rgba(16,185,129,0.2)';
+                badgeLabel.style.color = 'var(--emerald)';
+            } else {
+                if (svg) svg.innerHTML = '<path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>';
+                badgeLabel.textContent = 'INICIO';
+                badge.style.background = 'rgba(99,102,241,0.1)';
+                badge.style.borderColor = 'rgba(99,102,241,0.25)';
+                badgeLabel.style.color = '#818cf8';
+            }
         }
 
         if (elements.progressCircleMeta) {
-            // Arc = 5/6 of circle (300°), r=88: 2π×88×(5/6) = 461.81
-            // dasharray="461.81 552.92", so offset 461.81=empty, 0=full
             const arcLength = 461.81;
             const cappedPercent = Math.min(100, Math.max(0, porcentaje));
             elements.progressCircleMeta.style.strokeDashoffset = arcLength - (cappedPercent / 100) * arcLength;
@@ -231,8 +329,16 @@ export const renderer = {
         const efectivoReal = efectivoGanado - totalGastos;
         const totalNeto = efectivoReal + digitalNeto;
 
-        if (elements.gananciaEfectivo) elements.gananciaEfectivo.textContent = formatCurrency(efectivoReal);
-        if (elements.gananciaDigital) elements.gananciaDigital.textContent = formatCurrency(digitalNeto);
+        const formatCompact = (val) => {
+            if (val === 0) return '$0';
+            const k = val / 1000;
+            return `$${k.toFixed(1)}k`;
+        };
+
+        if (elements.gananciaEfectivo) elements.gananciaEfectivo.textContent = formatCompact(efectivoReal);
+        if (elements.gananciaDigital) elements.gananciaDigital.textContent = formatCompact(digitalNeto);
+        if (elements.jmGananciaEfectivo) elements.jmGananciaEfectivo.textContent = formatCompact(efectivoReal);
+        if (elements.jmGananciaDigital) elements.jmGananciaDigital.textContent = formatCompact(digitalNeto);
         if (elements.consolidadoNeto) {
             elements.consolidadoNeto.textContent = formatCurrency(totalNeto);
             elements.consolidadoNeto.style.opacity = '1';
@@ -347,15 +453,16 @@ export const renderer = {
     updateAddButton(state) {
         if (!elements.addCarrera) return;
 
+        const amountValue = elements.amountInput ? parseFloat(elements.amountInput.value.replace(/\D/g, '')) : 0;
         let canAdd = false;
         let label = 'REGISTRAR';
 
-        if (!state.selectedPlatform && !state.selectedPayment) {
-            label = 'ELIGE PLATAFORMA';
-        } else if (state.selectedPlatform && !state.selectedPayment) {
-            label = 'ELIGE PAGO';
-        } else if (!state.selectedPlatform && state.selectedPayment) {
-            label = 'ELIGE PLATAFORMA';
+        if (!amountValue || amountValue <= 0) {
+            label = 'INDIQUE VALOR';
+        } else if (!state.selectedPlatform) {
+            label = 'ELIJA PLATAFORMA';
+        } else if (!state.selectedPayment) {
+            label = 'ELIJA PAGO';
         } else {
             canAdd = true;
         }
