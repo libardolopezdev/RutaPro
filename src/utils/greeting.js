@@ -35,6 +35,9 @@ function getRandomMessage(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
+let currentPhase = null;
+let currentMessage = '';
+
 export function updateGreeting(state) {
     const el = document.getElementById('greetingText');
     const elModal = document.getElementById('jornadaModalGreeting');
@@ -46,20 +49,30 @@ export function updateGreeting(state) {
     const neto = totalCarrerasNeto - totalGastos;
     const pct = meta > 0 ? (neto / meta) * 100 : 0;
 
-    let message = '';
-
+    let phase = '';
     if (!state.jornadaIniciada) {
-        message = getRandomMessage(motivationalMessages.noJornada);
+        phase = 'noJornada';
     } else if (pct < 30) {
-        message = getRandomMessage(motivationalMessages.low);
+        phase = 'low';
     } else if (pct < 80) {
-        message = getRandomMessage(motivationalMessages.mid);
+        phase = 'mid';
     } else if (pct < 100) {
-        message = getRandomMessage(motivationalMessages.high);
+        phase = 'high';
     } else {
-        message = getRandomMessage(motivationalMessages.goal);
+        phase = 'goal';
     }
 
-    el.textContent = message;
-    if (elModal) elModal.textContent = message;
+    if (phase !== currentPhase) {
+        currentPhase = phase;
+        currentMessage = getRandomMessage(motivationalMessages[phase]);
+        
+        // Remove animation to re-trigger it
+        el.classList.remove('greeting-anim');
+        void el.offsetWidth; // Force reflow
+        el.classList.add('greeting-anim');
+        
+        // Colorize emojis or specific words if needed, but simple reveal is very pro
+        el.innerHTML = currentMessage;
+        if (elModal) elModal.textContent = currentMessage;
+    }
 }

@@ -3,6 +3,7 @@
  */
 import { store } from '../../state/store.js';
 import { showToast } from '../../utils/ui-utils.js';
+import { syncJornadaToFirestore } from '../carreras/carrerasModule.js';
 
 export const gastosModule = {
     addGasto(monto, tipo) {
@@ -16,6 +17,7 @@ export const gastosModule = {
         store.setState({
             gastos: [...state.gastos, nuevoGasto]
         });
+        syncJornadaToFirestore();
         showToast('Gasto agregado', 'success');
     },
 
@@ -25,6 +27,7 @@ export const gastosModule = {
             store.setState({
                 gastos: state.gastos.filter(g => g.id !== id)
             });
+            syncJornadaToFirestore();
             showToast('Gasto eliminado', 'success');
         }
     }

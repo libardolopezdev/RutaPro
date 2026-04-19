@@ -16,6 +16,8 @@ import { settingsModule } from './modules/settings/settingsModule.js';
 import { notificationsModule } from './modules/notifications/notificationsModule.js';
 import { haptics, springPress, animateCounter, shakeElement, launchConfetti } from './utils/haptics.js';
 
+window.historicoModule = historicoModule;
+
 async function initApp() {
     console.log('RutaPro V3: Powering Up...');
 
@@ -65,9 +67,11 @@ function updateThemeIcon(theme) {
     const icon = document.getElementById('themeIconHeader');
     if (!icon) return;
     if (theme === 'dark') {
-        icon.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5a7 7 0 0 1-7.4-7.4c.5.1 1 .1 1.5.1Z"/>';
-    } else {
+        // Show Sol to switch to Light
         icon.innerHTML = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>';
+    } else {
+        // Show Luna to switch to Dark
+        icon.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.5 0-1-.1-1.5a7 7 0 0 1-7.4-7.4c.5.1 1 .1 1.5.1Z"/>';
     }
 }
 
@@ -117,6 +121,7 @@ function setupEventListeners() {
     bind('btnCancelStart', 'click', () => closeModal('startJourneyModal'));
     
     bind('btnConfigureMetaStart', 'click', () => {
+        window._configMetaSource = 'startJourney';
         const state = store.getState();
         const currentMeta = state.settings.meta || 270000;
         
@@ -131,6 +136,24 @@ function setupEventListeners() {
         });
 
         closeModal('startJourneyModal');
+        openModal('configMetaModal');
+    });
+
+    bind('editMetaDashboardBtn', 'click', () => {
+        const state = store.getState();
+        const currentMeta = state.settings.meta || 270000;
+        
+        // Setup modal
+        const input = document.getElementById('customMetaInput');
+        if (input) input.value = currentMeta;
+        
+        // Sync active preset
+        const presets = document.querySelectorAll('.meta-preset-card');
+        presets.forEach(p => {
+            p.classList.toggle('active', parseInt(p.dataset.val) === currentMeta);
+        });
+
+        window._configMetaSource = 'dashboard';
         openModal('configMetaModal');
     });
 
@@ -159,7 +182,9 @@ function setupEventListeners() {
 
     bind('btnCloseConfigMeta', 'click', () => {
         closeModal('configMetaModal');
-        openModal('startJourneyModal');
+        if (window._configMetaSource !== 'dashboard') {
+            openModal('startJourneyModal');
+        }
     });
 
     bind('btnSaveMeta', 'click', () => {
@@ -171,7 +196,9 @@ function setupEventListeners() {
         if (display) display.textContent = `$${(val/1000).toFixed(0)}K`;
 
         closeModal('configMetaModal');
-        openModal('startJourneyModal');
+        if (window._configMetaSource !== 'dashboard') {
+            openModal('startJourneyModal');
+        }
     });
 
 
@@ -248,6 +275,7 @@ function setupEventListeners() {
     bind('amountInput', 'input', formatInput);
     bind('gastoMonto', 'input', formatInput);
     bind('metaInput', 'input', formatInput);
+    bind('settingsMetaInput', 'input', formatInput);
 
     // ── Delegación clicks dinámicos ──
     document.addEventListener('click', (e) => {
@@ -376,6 +404,13 @@ function setupEventListeners() {
     bind('saveSettings', 'click', () => {
         const metaStr = document.getElementById('metaInput').value.replace(/\D/g, '');
         settingsModule.save(metaStr);
+    });
+    bind('saveGlobalMetaBtn', 'click', () => {
+        const metaInputContainer = document.getElementById('settingsMetaInput');
+        if (metaInputContainer) {
+            const metaStr = metaInputContainer.value.replace(/\D/g, '');
+            settingsModule.save(metaStr);
+        }
     });
     bind('addPlatformBtn', 'click', () => {
         const nameEl = document.getElementById('newPlatformName');
@@ -515,6 +550,12 @@ function openCarrerasDetail() {
     const total = carreras.reduce((s, c) => s + (c.neto || c.amount), 0);
     const promedio = carreras.length > 0 ? Math.round(total / carreras.length) : 0;
 
+    const titleEl = document.querySelector('#carrerasDetailModal h3');
+    if (titleEl) {
+        titleEl.textContent = 'Carreras registradas';
+        titleEl.style.color = 'white';
+    }
+
     const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setText('carrerasDetailSubtitle', `${carreras.length} registradas`);
     setText('cdTotalBruto', `$${total.toLocaleString('es-CO')}`);
@@ -610,6 +651,57 @@ function openRachaDetail() {
     const modal = document.getElementById('rachaDetailModal');
     if (modal) modal.style.display = 'flex';
 }
+
+window.openPaymentDetail = function(paymentType) {
+    const state = store.getState();
+    const isDigital = paymentType === 'digital';
+    
+    // Filtro para 'digital' es todo menos efectivo
+    const carreras = state.carreras.filter(c => 
+        isDigital ? c.payment !== 'efectivo' : c.payment === 'efectivo'
+    );
+
+    const total = carreras.reduce((s, c) => s + (c.neto || c.amount), 0);
+    const promedio = carreras.length > 0 ? Math.round(total / carreras.length) : 0;
+
+    const title = paymentType === 'efectivo' ? 'Ingresos Efectivo' : 'Ingresos Digitales';
+    const color = paymentType === 'efectivo' ? 'var(--emerald)' : 'var(--blue)';
+
+    const titleEl = document.querySelector('#carrerasDetailModal h3');
+    if (titleEl) {
+        titleEl.textContent = title;
+        titleEl.style.color = color;
+    }
+
+    const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setText('carrerasDetailSubtitle', `${carreras.length} registradas`);
+    setText('cdTotalBruto', `$${total.toLocaleString('es-CO')}`);
+    setText('cdTotalRides', carreras.length);
+    setText('cdPromedio', `$${promedio.toLocaleString('es-CO')}`);
+
+    const list = document.getElementById('carrerasDetailList');
+    if (list) {
+        list.innerHTML = carreras.length === 0
+            ? `<div style="text-align:center; padding:32px; color:var(--text-muted); font-size:13px;">Sin carreras registradas</div>`
+            : carreras.slice().reverse().map((c) => {
+                const platform = c.platform || c.plataforma || '—';
+                const payment = c.payment || c.metodoPago || '—';
+                const time = c.timestamp ? new Date(c.timestamp).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:14px 16px; margin-bottom:8px;">
+                        <div>
+                            <div style="font-size:14px; font-weight:700; color:var(--text-primary);">$${(c.neto || c.amount).toLocaleString('es-CO')}</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${platform.toUpperCase()} · ${payment.toUpperCase()} · ${time}</div>
+                        </div>
+                        <button class="delete-btn" data-id="${c.id}" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--ruby); border-radius:10px; padding:6px 10px; font-size:11px; font-weight:700; cursor:pointer;">Borrar</button>
+                    </div>
+                `;
+            }).join('');
+    }
+
+    const modal = document.getElementById('carrerasDetailModal');
+    if (modal) modal.style.display = 'flex';
+};
 
 // Start
 if (document.readyState === 'loading') {

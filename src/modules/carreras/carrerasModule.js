@@ -7,7 +7,7 @@ import { formatCurrency, getPlatformName } from '../../utils/format.js';
 import { firestoreService } from '../../services/firestoreService.js';
 
 // Persiste jornada activa (carreras + gastos) en Firestore para sincronización entre dispositivos.
-async function syncJornadaToFirestore() {
+export async function syncJornadaToFirestore() {
     const state = store.getState();
     if (!state.user || !state.jornadaIniciada) return;
     const syncPayload = {

@@ -8,7 +8,7 @@ import { showToast } from '../../utils/ui-utils.js';
 export const settingsModule = {
     open() {
         const state = store.getState();
-        const input = document.getElementById('metaInput');
+        const input = document.getElementById('settingsMetaInput'); // Actualizado
         if (input) {
             const meta = state.settings.meta || 270000;
             input.value = new Intl.NumberFormat('es-CO').format(meta);

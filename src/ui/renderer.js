@@ -233,73 +233,68 @@ export const renderer = {
             // 3. Motivational Message Logic
             if (porcentaje >= 100) {
                 elements.remainingDisplay.textContent = '¡Meta lograda!';
-                elements.remainingDisplay.style.color = 'var(--emerald)';
+                elements.remainingDisplay.style.color = 'var(--gold)';
+                elements.remainingDisplay.style.fontSize = '12px';
+                elements.remainingDisplay.style.fontWeight = '700';
                 if (motivIconContainer) {
-                    motivIconContainer.className = 'icon-box small emerald';
-                    motivIconContainer.style.color = 'var(--emerald)';
+                    motivIconContainer.className = 'icon-box small gold';
+                    motivIconContainer.style.color = 'var(--gold)';
                 }
                 if (motivIconSvg) motivIconSvg.innerHTML = '<path d="m20 8-8 5-8-5V6l8 5 8-5v2Z"/><path d="M4 10h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"/><path d="M12 10v10"/><path d="m16 14-4 4-4-4"/>'; // Confetti/Party icon
             } else {
                 if (motivIconContainer) {
                     motivIconContainer.className = 'icon-box small';
-                    motivIconContainer.style.color = 'var(--gold)';
+                    motivIconContainer.style.color = 'var(--emerald)';
                 }
-                if (motivIconSvg) motivIconSvg.innerHTML = '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.27 1.27L3 12l5.813 1.912a2 2 0 0 1 1.27 1.27L12 21l1.912-5.813a2 2 0 0 1 1.27-1.27L21 12l-5.813-1.912a2 2 0 0 1-1.27-1.27L12 3Z"/>'; // Star/Energy
+                if (motivIconSvg) motivIconSvg.innerHTML = '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'; // Reloj icon
                 
-                if (remaining > 0) {
-                    const totalCarrerasNeto = state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0);
-                    const avgPerRide = state.carreras.length > 0 ? totalCarrerasNeto / state.carreras.length : 0;
-                    
-                    if (avgPerRide > 0) {
-                        const ridesLeft = Math.ceil(remaining / avgPerRide);
-                        const label = porcentaje >= 85 ? '¡CASI!' : 'VAMOS';
-                        elements.remainingDisplay.textContent = `${label} · ~${ridesLeft} carrera${ridesLeft !== 1 ? 's' : ''} más`;
-                    } else {
-                        elements.remainingDisplay.textContent = `$${(remaining / 1000).toFixed(0)}k restante`;
-                    }
+                elements.remainingDisplay.style.fontSize = '10px';
+                elements.remainingDisplay.style.fontWeight = '600';
+                elements.remainingDisplay.style.letterSpacing = '0.3px';
+                elements.remainingDisplay.style.color = 'var(--text-secondary)';
+
+                const diffMs = state.jornadaInicio ? Date.now() - new Date(state.jornadaInicio).getTime() : 0;
+                const hours = diffMs / 3600000;
+                if (hours > 0.05 && totalNeto > 0) {
+                    const perHour = totalNeto / hours;
+                    elements.remainingDisplay.textContent = `$${(perHour / 1000).toFixed(1)}k/h · ~${Math.max(0, remaining/1000).toFixed(0)}k resta`;
                 } else {
-                    elements.remainingDisplay.textContent = `$${(remaining / 1000).toFixed(0)}k restante`;
+                    elements.remainingDisplay.textContent = `Calculando... · ~${Math.max(0, remaining/1000).toFixed(0)}k resta`;
                 }
-                elements.remainingDisplay.style.color = 'var(--gold)';
             }
         }
 
-        // Dynamic badge update
+        // Dynamic badge update (Top used platform)
         const badgeIcon = document.getElementById('heroProgressBadgeIcon');
         const badgeLabel = document.getElementById('heroProgressBadgeLabel');
         const badge = document.getElementById('heroProgressBadge');
         if (badge && badgeIcon && badgeLabel) {
-            const svg = badgeIcon.querySelector('svg');
+            const stats = {};
+            state.carreras.forEach(c => {
+                if (!stats[c.platform]) stats[c.platform] = 0;
+                stats[c.platform]++;
+            });
+            const topPlat = Object.entries(stats).sort((a,b) => b[1] - a[1])[0];
+
             if (porcentaje >= 100) {
-                if (svg) svg.innerHTML = '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>';
+                badgeIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
                 badgeLabel.textContent = '¡META!';
-                badge.style.background = 'rgba(234,179,8,0.15)';
-                badge.style.borderColor = 'rgba(234,179,8,0.4)';
+                badge.style.background = 'var(--gold-glow)';
+                badge.style.borderColor = 'var(--gold-glow)';
                 badgeLabel.style.color = 'var(--gold)';
-            } else if (porcentaje >= 85) {
-                if (svg) svg.innerHTML = '<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>';
-                badgeLabel.textContent = 'CASI';
-                badge.style.background = 'rgba(239,68,68,0.12)';
-                badge.style.borderColor = 'rgba(239,68,68,0.35)';
-                badgeLabel.style.color = '#f87171';
-            } else if (porcentaje >= 50) {
-                if (svg) svg.innerHTML = '<path d="m12 3-1.912 5.813a2 2 0 0 1-1.27 1.27L3 12l5.813 1.912a2 2 0 0 1 1.27 1.27L12 21l1.912-5.813a2 2 0 0 1 1.27-1.27L21 12l-5.813-1.912a2 2 0 0 1-1.27-1.27L12 3Z"/>';
-                badgeLabel.textContent = 'VAMOS';
-                badge.style.background = 'rgba(16,185,129,0.12)';
-                badge.style.borderColor = 'rgba(16,185,129,0.3)';
-                badgeLabel.style.color = 'var(--emerald)';
-            } else if (porcentaje > 0) {
-                if (svg) svg.innerHTML = '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.5-1 1-4c2 0 3 .5 3 .5"/><path d="M15 9h5s1 .5 4 1c0 2-.5 3-.5 3"/>';
-                badgeLabel.textContent = 'EN RUTA';
-                badge.style.background = 'rgba(16,185,129,0.08)';
-                badge.style.borderColor = 'rgba(16,185,129,0.2)';
-                badgeLabel.style.color = 'var(--emerald)';
-            } else {
-                if (svg) svg.innerHTML = '<path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>';
+            } else if (state.carreras.length === 0) {
+                badgeIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`;
                 badgeLabel.textContent = 'INICIO';
-                badge.style.background = 'rgba(99,102,241,0.1)';
-                badge.style.borderColor = 'rgba(99,102,241,0.25)';
+                badge.style.background = 'var(--indigo-glow)';
+                badge.style.borderColor = 'var(--indigo-glow)';
                 badgeLabel.style.color = '#818cf8';
+            } else if (topPlat) {
+                const norm = normalizePlatform(topPlat[0], state.settings.plataformas);
+                badgeIcon.innerHTML = `<div style="width:6px; height:6px; border-radius:50%; background:${norm.color}; box-shadow:0 0 8px ${norm.color};"></div>`;
+                badgeLabel.textContent = `${norm.name.toUpperCase()} Lidera`;
+                badge.style.background = `rgba(255,255,255,0.05)`;
+                badge.style.borderColor = `${norm.color}40`;
+                badgeLabel.style.color = 'var(--text-primary)';
             }
         }
 
@@ -311,9 +306,15 @@ export const renderer = {
             if (porcentaje >= 100) {
                 elements.progressCircleMeta.style.filter = 'drop-shadow(0 0 14px var(--gold-glow))';
                 elements.progressCircleMeta.style.stroke = 'var(--gold)';
+            } else if (porcentaje < 40) {
+                elements.progressCircleMeta.style.filter = 'drop-shadow(0 0 10px var(--ruby-glow))';
+                elements.progressCircleMeta.style.stroke = 'var(--ruby)';
+            } else if (porcentaje < 75) {
+                elements.progressCircleMeta.style.filter = 'drop-shadow(0 0 10px var(--gold-glow))';
+                elements.progressCircleMeta.style.stroke = 'var(--gold)';
             } else {
                 elements.progressCircleMeta.style.filter = 'drop-shadow(0 0 10px var(--emerald-glow))';
-                elements.progressCircleMeta.style.stroke = 'url(#gaugeGradient)';
+                elements.progressCircleMeta.style.stroke = 'var(--emerald)';
             }
         }
     },

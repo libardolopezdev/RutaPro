@@ -15,17 +15,51 @@ export const firestoreService = {
             });
     },
 
-    async getHistorico(uid, limitCount = 20, lastDoc = null) {
+    async getHistorico(uid, includeDeleted = false, limitCount = 20, lastDoc = null) {
         let query = db.collection('users').doc(uid)
             .collection('historico')
             .orderBy('createdAt', 'desc')
             .limit(limitCount);
         if (lastDoc) query = query.startAfter(lastDoc);
         const snapshot = await query.get();
+        
+        const allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const nowMs = Date.now();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        
+        const filteredData = allDocs.filter(d => {
+            if (d.deletedAt) {
+                const delTime = d.deletedAt.toMillis ? d.deletedAt.toMillis() : (d.deletedAt.seconds ? d.deletedAt.seconds * 1000 : Date.now());
+                 if (nowMs - delTime > thirtyDaysMs) {
+                     // Hard delete auto
+                     db.collection('users').doc(uid).collection('historico').doc(d.id).delete();
+                     return false;
+                 }
+                 return includeDeleted;
+            }
+            return true; // We always want non-deleted history items
+        });
+
         return {
-            data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            data: filteredData,
             lastVisible: snapshot.docs[snapshot.docs.length - 1]
         };
+    },
+
+    async moveToTrash(uid, docId) {
+        return db.collection('users').doc(uid).collection('historico').doc(docId).update({
+            deletedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+        });
+    },
+
+    async restoreFromTrash(uid, docId) {
+         return db.collection('users').doc(uid).collection('historico').doc(docId).update({
+            deletedAt: window.firebase.firestore.FieldValue.delete()
+        });
+    },
+
+    async hardDeleteHistorico(uid, docId) {
+        return db.collection('users').doc(uid).collection('historico').doc(docId).delete();
     },
 
     async addToHistorico(uid, jornadaData) {
