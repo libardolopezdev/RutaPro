@@ -150,19 +150,23 @@ export const carrerasModule = {
         report += `💳 Digital: ${formatCurrency(digital)}\n`;
         report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
-        // Desglose por plataforma ordenado descendente
+        // Desglose por plataforma y método de pago ordenado descendente
         report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
         const stats = {};
         state.carreras.forEach(c => {
-            if (!stats[c.platform]) stats[c.platform] = { total: 0, count: 0 };
-            stats[c.platform].total += (c.neto || c.amount);
-            stats[c.platform].count++;
+            const key = `${c.platform}_${c.payment}`;
+            if (!stats[key]) {
+                stats[key] = { platform: c.platform, payment: c.payment, total: 0, count: 0 };
+            }
+            stats[key].total += (c.neto || c.amount);
+            stats[key].count++;
         });
-        Object.entries(stats)
-            .sort(([, a], [, b]) => b.total - a.total)
-            .forEach(([plat, data]) => {
-                const name = getPlatformName(plat, state.settings.plataformas);
-                report += `  • ${name.toUpperCase()}: ${formatCurrency(data.total)} (${data.count} carreras)\n`;
+        Object.values(stats)
+            .sort((a, b) => b.total - a.total)
+            .forEach(data => {
+                const name = getPlatformName(data.platform, state.settings.plataformas);
+                const paymentName = data.payment ? data.payment.charAt(0).toUpperCase() + data.payment.slice(1) : 'Desconocido';
+                report += `  • ${name.toUpperCase()}: ${formatCurrency(data.total)} (${data.count} carrera${data.count === 1 ? '' : 's'}) | ${paymentName}\n`;
             });
 
         report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
