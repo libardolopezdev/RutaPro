@@ -715,6 +715,43 @@
         </div>
     </div>
 
+    <!-- ===== MODAL DETALLE JORNADA HISTÓRICA ===== -->
+    <div id="historicoDetailModal" class="modal-overlay">
+        <div class="modal-glass">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+                <h3 id="hdFecha" style="margin:0;font-size:16px;">Detalle de Jornada</h3>
+                <div class="icon-box glass" onclick="document.getElementById('historicoDetailModal').style.display = 'none'" style="cursor:pointer;padding:6px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round" style="width:16px;height:16px;">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </div>
+            </div>
+            <div style="margin-bottom:20px;border-bottom:1px solid var(--border-glass);padding-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <span class="label-xs" style="margin:0;font-size:12px;color:var(--text-secondary);">Carreras</span>
+                    <span id="hdCarreras" style="font-family:'JetBrains Mono';font-weight:700;">0</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <span class="label-xs" style="margin:0;font-size:12px;color:var(--text-secondary);">Total Bruto</span>
+                    <span id="hdBruto" style="font-family:'JetBrains Mono';font-weight:700;">$0</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <span class="label-xs" style="margin:0;font-size:12px;color:var(--text-secondary);">Total Gastos</span>
+                    <span id="hdGastos" style="font-family:'JetBrains Mono';color:var(--ruby);font-weight:700;">$0</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);">
+                    <span class="label-xs" style="margin:0;font-size:12px;color:var(--text-secondary);">Total Neto</span>
+                    <span id="hdNeto" style="font-family:'JetBrains Mono';color:var(--emerald);font-weight:800;font-size:18px;">$0</span>
+                </div>
+            </div>
+            
+            <button class="btn-ultra btn-emerald" id="hdCompartirBtn" style="margin-bottom:16px;width:100%;">📤 COMPARTIR REPORTE</button>
+            <button onclick="document.getElementById('historicoDetailModal').style.display = 'none'"
+                style="width:100%;padding:12px;background:none;border:none;color:var(--text-secondary);cursor:pointer;font-weight:500;">Cerrar</button>
+        </div>
+    </div>
+
     <!-- ===== MODAL CONFIGURACIÓN ===== -->
     <div id="settingsModal" class="modal-overlay">
         <div class="modal-glass" style="max-height:90vh;overflow-y:auto;">

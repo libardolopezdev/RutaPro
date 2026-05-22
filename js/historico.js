@@ -108,7 +108,7 @@ function loadHistorico() {
 
     // Renderizar listado de jornadas
     let html = '';
-    filteredData.slice().reverse().forEach(item => {
+    filteredData.slice().sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).forEach(item => {
         html += `
             <div class="historico-item">
                 <div class="historico-fecha">${new Date(item.fecha).toLocaleDateString('es-ES')}</div>

@@ -4,7 +4,8 @@
 import { store } from '../../state/store.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { storageService } from '../../services/storageService.js';
-import { formatCurrency } from '../../utils/format.js';
+import { formatCurrency, getPlatformName } from '../../utils/format.js';
+import { showToast } from '../../utils/ui-utils.js';
 
 export const historicoModule = {
     currentTab: 'historial',
@@ -104,8 +105,8 @@ export const historicoModule = {
             return;
         }
 
-        const sorted = [...data].sort((a, b) => (b.ganancia || 0) - (a.ganancia || 0));
-        const topGanancia = sorted[0]?.ganancia || 0;
+        const topGanancia = data.length > 0 ? Math.max(...data.map(d => d.ganancia || 0)) : 0;
+        const sorted = [...data].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
         let html = '';
         if (isPapelera && data.length > 0) {
@@ -116,7 +117,7 @@ export const historicoModule = {
             const promedio = item.totalCarreras > 0
                 ? formatCurrency(item.ganancia / item.totalCarreras)
                 : formatCurrency(0);
-            const isTop = !isPapelera && idx === 0 && item.ganancia === topGanancia && sorted.length > 0;
+            const isTop = !isPapelera && idx === sorted.findIndex(s => s.ganancia === topGanancia) && topGanancia > 0;
             
             const actionBtn = isPapelera 
                 ? `<div style="display:flex; gap:8px; margin-top:12px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
@@ -126,7 +127,7 @@ export const historicoModule = {
                 : `<button onclick="window.historicoModule.trashItem('${item.id}')" class="icon-box glass small" style="position:absolute; right:16px; top:16px; color:var(--ruby); cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>`;
 
             return `
-            <div class="historico-item${isTop ? ' historico-item--top' : ''}" style="position:relative;">
+            <div class="historico-item${isTop ? ' historico-item--top' : ''}" style="position:relative; cursor:pointer;" onclick="if(!event.target.closest('button')) window.historicoModule.openDetail('${item.id}')">
                 ${isTop ? '<div class="historico-top-badge">🏆 Mayor ingreso</div>' : ''}
                 <div class="historico-fecha" style="padding-right: 32px;">${new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
                 <div class="historico-stats">
@@ -140,5 +141,140 @@ export const historicoModule = {
         }).join('');
         
         content.innerHTML = html;
+    },
+
+    openDetail(id) {
+        const item = this.allData.find(d => d.id === id);
+        if (!item) return;
+
+        const carreras = item.carrerasDesglose || [];
+        const gastos = item.gastosDesglose || [];
+        const totalCarreras = item.totalCarreras !== undefined ? item.totalCarreras : carreras.length;
+        const totalBruto = item.totalBruto !== undefined ? item.totalBruto : carreras.reduce((sum, c) => sum + (c.amount || 0), 0);
+        const totalNeto = item.ganancia !== undefined ? item.ganancia : (totalBruto - gastos.reduce((sum, g) => sum + (g.monto || 0), 0));
+        const totalGastos = totalBruto - totalNeto;
+
+        const formattedDate = new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        
+        document.getElementById('hdFecha').textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+        document.getElementById('hdCarreras').textContent = totalCarreras;
+        document.getElementById('hdBruto').textContent = formatCurrency(totalBruto);
+        document.getElementById('hdGastos').textContent = `-$${totalGastos.toLocaleString('es-CO')}`;
+        document.getElementById('hdNeto').textContent = formatCurrency(totalNeto);
+
+        const compartirBtn = document.getElementById('hdCompartirBtn');
+        compartirBtn.onclick = () => this.exportHistoricoReport(item);
+
+        document.getElementById('historicoDetailModal').style.display = 'flex';
+    },
+
+    exportHistoricoReport(item) {
+        const state = store.getState();
+        const carreras = item.carrerasDesglose || [];
+        const gastos = item.gastosDesglose || [];
+        
+        const totalCarreras = item.totalCarreras !== undefined ? item.totalCarreras : carreras.length;
+        const totalBruto = item.totalBruto !== undefined ? item.totalBruto : carreras.reduce((sum, c) => sum + (c.amount || 0), 0);
+        const totalNeto = item.ganancia !== undefined ? item.ganancia : (totalBruto - gastos.reduce((sum, g) => sum + (g.monto || 0), 0));
+        const totalGastos = totalBruto - totalNeto;
+
+        let efectivo = 0;
+        let digital = 0;
+        carreras.forEach(c => {
+            if (c.payment === 'efectivo') efectivo += (c.neto || c.amount || 0);
+            else digital += (c.neto || c.amount || 0);
+        });
+        const efectivoReal = efectivo - totalGastos;
+
+        let report = `🚗 *RUTAPRO — REPORTE DE JORNADA*\n`;
+        report += `📅 ${new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `✅ Carreras: ${totalCarreras}\n`;
+        report += `💵 Total Bruto: ${formatCurrency(totalBruto)}\n`;
+        report += `📉 Gastos: ${formatCurrency(totalGastos)}\n`;
+        report += `💰 *Neto Total: ${formatCurrency(totalNeto)}*\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `💵 Efectivo (después gastos): ${formatCurrency(efectivoReal)}\n`;
+        report += `💳 Digital: ${formatCurrency(digital)}\n`;
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+
+        // Desglose por plataforma y método de pago ordenado descendente
+        report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
+        const stats = {};
+        carreras.forEach(c => {
+            const platform = c.platform || c.plataforma || '—';
+            const payment = c.payment || c.metodoPago || '—';
+            const key = `${platform}_${payment}`;
+            if (!stats[key]) {
+                stats[key] = { platform, payment, total: 0, count: 0 };
+            }
+            stats[key].total += (c.neto || c.amount || 0);
+            stats[key].count++;
+        });
+
+        Object.values(stats)
+            .sort((a, b) => b.total - a.total)
+            .forEach(data => {
+                const name = getPlatformName(data.platform, state.settings?.plataformas || []);
+                const paymentName = data.payment ? data.payment.charAt(0).toUpperCase() + data.payment.slice(1) : 'Desconocido';
+                report += `  • ${name.toUpperCase()}: ${formatCurrency(data.total)} (${data.count} carrera${data.count === 1 ? '' : 's'}) | ${paymentName}\n`;
+            });
+
+        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+        report += `#RutaPro`;
+
+        this.shareText(report);
+    },
+
+    shareText(text) {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Reporte RutaPro',
+                text: text
+            }).catch((e) => {
+                console.error('Error usando navigator.share:', e);
+                if (e.name !== 'AbortError') {
+                    this.shareViaWhatsApp(text);
+                }
+            });
+        } else {
+            this.shareViaWhatsApp(text);
+        }
+    },
+
+    shareViaWhatsApp(text) {
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+    },
+
+    copyToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Reporte copiado al portapapeles', 'success');
+            }).catch(() => {
+                this.fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            this.fallbackCopyTextToClipboard(text);
+        }
+    },
+
+    fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast('Reporte copiado al portapapeles', 'success');
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+            showToast('Error al copiar el reporte', 'error');
+        }
+        document.body.removeChild(textArea);
     }
 };
