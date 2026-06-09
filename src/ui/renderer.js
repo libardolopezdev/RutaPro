@@ -182,6 +182,10 @@ export const renderer = {
             const cappedPercent = Math.min(100, Math.max(0, porcentaje));
             progressBar.style.width = `${cappedPercent}%`;
 
+            // Clases para el modo claro premium
+            progressBar.className = 'barra-progreso';
+            if (porcentaje >= 80) progressBar.classList.add('alta');
+
             if (porcentaje > 100) {
                 progressBar.style.background = 'var(--gold)';
                 progressBar.style.boxShadow = '0 0 14px var(--gold-glow)';

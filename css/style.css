@@ -55,40 +55,119 @@
 
 [data-theme="light"] {
     /* Premium Pearl UI Palette */
-    --bg-obsidian: #F4F7F9;
+    --bg-obsidian: #F0F2F5;
     --bg-sapphire: #FFFFFF;
-    --bg-overlay: rgba(255, 255, 255, 0.85);
+    --bg-overlay: rgba(0, 0, 0, 0.4);
 
     /* Crisp Surfaces */
-    --surface-base: rgba(255, 255, 255, 0.95);
+    --surface-base: #FFFFFF;
     --surface-glass: #FFFFFF;
-    --surface-glass-light: rgba(0, 0, 0, 0.04);
+    --surface-glass-light: #F8F9FC;
     
     /* High Contrast Typography */
-    --text-primary: #1A202C;
-    --text-secondary: #64748B;
+    --text-primary: #0D1117;
+    --text-secondary: #6B7280;
     --text-muted: #94A3B8;
     
     /* Borders & Elevated Depth */
-    --border-glass: #E2E8F0;
-    --shadow-soft: 0px 4px 12px rgba(0, 0, 0, 0.04), 0px 1px 2px rgba(0, 0, 0, 0.02);
-    --shadow-premium: 0px 8px 24px rgba(0, 0, 0, 0.06);
-    --shadow-emerald: 0px 6px 16px rgba(16, 185, 129, 0.15);
+    --border-glass: rgba(0,0,0,0.06);
+    --shadow-soft: 0px 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-premium: 0 2px 16px rgba(0,0,0,0.08);
+    --shadow-emerald: 0px 6px 16px rgba(0, 200, 83, 0.15);
     
     /* Semantic Glows for Light Mode */
-    --emerald-glow: rgba(16, 185, 129, 0.15);
-    --gold-glow: rgba(234, 179, 8, 0.15);
-    --ruby-glow: rgba(239, 68, 68, 0.15);
+    --emerald-glow: rgba(0, 200, 83, 0.2);
+    --gold-glow: rgba(245, 158, 11, 0.2);
+    --ruby-glow: rgba(244, 67, 54, 0.2);
     --indigo-glow: rgba(99, 102, 241, 0.15);
     
     /* Gauge Tracks */
     --gauge-bg: rgba(0, 0, 0, 0.06);
 
     /* Uber dynamic */
-    --uber-color: var(--text-primary);
+    --uber-color: #0D1117;
     --uber-glow: rgba(0, 0, 0, 0.06);
-    --uber-bg: rgba(0, 0, 0, 0.03);
+    --uber-bg: #FFFFFF;
+
+    /* Accents */
+    --emerald: #00C853;
+    --ruby: #F44336;
+    --gold: #F59E0B;
 }
+
+/* Light mode specific element overrides */
+[data-theme="light"] .glass-card {
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    border-radius: 20px;
+}
+
+[data-theme="light"] .card-efectivo, 
+[data-theme="light"] .card-digital {
+    background: linear-gradient(135deg, #F8F9FC, #FFFFFF) !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+[data-theme="light"] .barra-progreso {
+    background: linear-gradient(90deg, #F44336, #FF6B35) !important;
+    border-radius: 4px !important;
+    height: 6px !important;
+    box-shadow: none !important;
+}
+
+[data-theme="light"] .barra-progreso.alta {
+    background: linear-gradient(90deg, #00C853, #69F0AE) !important;
+}
+
+[data-theme="light"] header {
+    background: transparent !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+[data-theme="light"] .frase-motivacional {
+    color: #0D1117 !important;
+    font-weight: 600 !important;
+}
+
+[data-theme="light"] .seccion-plataformas {
+    background: #FFFFFF !important;
+    border-radius: 20px !important;
+    padding: 16px !important;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08) !important;
+    border: 1px solid rgba(0,0,0,0.06) !important;
+}
+
+[data-theme="light"] .bottom-nav {
+    background: #FFFFFF !important;
+    border-top: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
+}
+
+[data-theme="light"] .nav-icon { 
+    color: #6B7280 !important; 
+}
+
+[data-theme="light"] .nav-icon.active { 
+    color: #00C853 !important; 
+}
+
+[data-theme="light"] .fab-main {
+    background: #00C853 !important;
+    box-shadow: 0 4px 20px rgba(0,200,83,0.4) !important;
+}
+
+[data-theme="light"] .label-secundario {
+    color: #6B7280 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+}
+
 
 /* Base */
 *,
@@ -2162,6 +2241,73 @@ h3 {
   color: rgba(255,255,255,0.8);
   text-align: center;
   white-space: nowrap;
+}
+
+/* Card Footer Stats */
+.card-footer-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 0;
+}
+
+/* Bottom Sheet */
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1A1A2E;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 16px;
+  z-index: 1100;
+  max-height: 70vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-sheet.visible {
+  transform: translateY(0);
+}
+
+.bottom-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.bottom-sheet-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.bottom-sheet-close {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: rgba(255,255,255,0.6);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
 }
 
 

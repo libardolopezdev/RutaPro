@@ -89,7 +89,7 @@ export function getLogoUrl(nombrePlataforma) {
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/\s+/g, "");
     
-    return `https://logo.clearbit.com/${nombre}.com`;
+    return `https://www.google.com/s2/favicons?domain=${nombre}.com&sz=64`;
 }
   
 export function renderAvatar(plataforma) {

@@ -118,7 +118,7 @@
             <div class="glass-card" id="heroGananciasCard" style="padding: 24px; border-radius: 28px;">
                 <!-- Top Row -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">
+                    <div class="label-secundario" style="display: flex; align-items: center; gap: 6px;">
                         GANANCIAS DEL DÍA
                         <svg fill="none" height="10" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="10"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
                     </div>
@@ -133,30 +133,34 @@
                 <!-- Progress Bar Section -->
                 <div style="margin-top: 24px;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-                        <span id="remainingDisplay" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Calculando...</span>
+                        <span id="remainingDisplay" class="frase-motivacional" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Calculando...</span>
                         <span id="porcentajeDisplay" style="font-size: 12px; color: var(--text-muted); font-weight: 800;">0%</span>
                     </div>
                     <div style="width: 100%; background: var(--surface-glass); border-radius: 8px; height: 8px; overflow: hidden; border: 1px solid var(--border-glass);">
-                        <div id="goalProgressBar" style="background: var(--emerald); height: 100%; border-radius: 8px; width: 0%; transition: width 1s var(--ease); box-shadow: 0 0 10px var(--emerald-glow);"></div>
+                        <div id="goalProgressBar" class="barra-progreso" style="height: 100%; width: 0%; transition: width 1s var(--ease);"></div>
                     </div>
                 </div>
 
                 <!-- Bottom Row: Symmetrical mini-cards -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
-                    <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; border: 1px solid var(--border-glass); display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'" onclick="window.openPaymentDetail && window.openPaymentDetail('efectivo')">
-                        <span style="font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">EFECTIVO</span>
+                    <div class="card-efectivo" style="padding: 16px; border-radius: 16px; display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="window.openPaymentDetail && window.openPaymentDetail('efectivo')">
+                        <span class="label-secundario" style="margin-bottom: 6px;">EFECTIVO</span>
                         <span id="gananciaEfectivo" style="font-size: 20px; font-weight: 800; color: var(--gold); font-family: 'JetBrains Mono', monospace;">$0</span>
                     </div>
-                    <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; border: 1px solid var(--border-glass); display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'" onclick="window.openPaymentDetail && window.openPaymentDetail('digital')">
-                        <span style="font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">DIGITAL</span>
+                    <div class="card-digital" style="padding: 16px; border-radius: 16px; display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onclick="window.openPaymentDetail && window.openPaymentDetail('digital')">
+                        <span class="label-secundario" style="margin-bottom: 6px;">DIGITAL</span>
                         <span id="gananciaDigital" style="font-size: 20px; font-weight: 800; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">$0</span>
                     </div>
+                </div>
+                <!-- Footer Stats: Carreras y Tiempo -->
+                <div class="card-footer-stats" style="cursor: pointer;" onclick="window.carrerasModule && window.carrerasModule.openRidesBottomSheet()">
+                    🚗 <span id="metaStatRides">0</span> carreras hoy · ⏱ <span id="metaStatTime">0m</span>
                 </div>
             </div>
 
             <!-- PLATFORM PERFORMANCE & SECONDARY METRICS -->
-            <div style="margin-top: 24px; margin-bottom: 24px;">
-                <h3 style="display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 16px;">
+            <div style="margin-top: 0; margin-bottom: 24px;" class="seccion-plataformas">
+                <h3 class="label-secundario" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                     <svg fill="none" height="14" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
                     Rendimiento por plataforma
                 </h3>
@@ -168,13 +172,6 @@
                     </div>
                 </div>
 
-                <!-- Secondary Metrics -->
-                <div style="border-top: 1px solid var(--border-glass); padding-top: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
-                    <div style="display: flex; gap: 16px; cursor: pointer;" onclick="import('./src/modules/carreras/carrerasModule.js').then(m => m.carrerasModule.openDetail())">
-                        <p>Carreras hoy: <span id="metaStatRides" style="color: var(--text-primary); font-weight: 800;">0</span></p>
-                        <p>Tiempo: <span id="metaStatTime" style="color: var(--text-primary); font-weight: 800;">0h</span></p>
-                    </div>
-                </div>
             </div>
 
             <div style="display:none;">
@@ -291,6 +288,21 @@
                     <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== BOTTOM SHEET CARRERAS ===== -->
+    <div class="fab-menu-overlay" id="ridesBottomSheetOverlay" style="z-index: 1050; display: none;"></div>
+    <div class="bottom-sheet" id="ridesBottomSheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-header">
+            <h3 class="bottom-sheet-title">Carreras de hoy (<span id="ridesBottomSheetCount">0</span>)</h3>
+            <button class="bottom-sheet-close" id="ridesBottomSheetClose">
+                ✕ Cerrar
+            </button>
+        </div>
+        <div id="ridesBottomSheetList" style="display: flex; flex-direction: column;">
+            <!-- Contenido generado dinámicamente -->
         </div>
     </div>
 

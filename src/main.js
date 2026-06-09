@@ -17,6 +17,7 @@ import { notificationsModule } from './modules/notifications/notificationsModule
 import { haptics, springPress, animateCounter, shakeElement, launchConfetti } from './utils/haptics.js';
 
 window.historicoModule = historicoModule;
+window.carrerasModule = carrerasModule;
 
 async function initApp() {
     console.log('RutaPro V3: Powering Up...');
@@ -382,7 +383,7 @@ function setupEventListeners() {
     bind('notifCloseBtn', 'click', () => closeModal('notificationModal'));
 
     // Cerrar al hacer clic en el overlay
-    ['carrerasDetailModal', 'tiempoDetailModal', 'rachaDetailModal', 'historicoSection', 'statsModal'].forEach(id => {
+    ['carrerasDetailModal', 'tiempoDetailModal', 'rachaDetailModal', 'historicoSection', 'statsModal', 'ridesBottomSheetOverlay'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('click', (e) => {
             if (e.target === el) {
@@ -390,6 +391,8 @@ function setupEventListeners() {
                     historicoModule.close();
                 } else if (id === 'statsModal') {
                     closeModal('statsModal');
+                } else if (id === 'ridesBottomSheetOverlay') {
+                    carrerasModule.closeRidesBottomSheet();
                 } else {
                     closeModal(id);
                 }
@@ -399,6 +402,9 @@ function setupEventListeners() {
 
     // Cerrar modal de estadísticas desde su botón
     bind('closeStats', 'click', () => closeModal('statsModal'));
+
+    // Botón de cerrar de la lista de carreras
+    bind('ridesBottomSheetClose', 'click', () => carrerasModule.closeRidesBottomSheet());
 
     // ── Settings ──
     bind('saveSettings', 'click', () => {
