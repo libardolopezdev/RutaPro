@@ -1,4 +1,4 @@
-import { formatCurrency, normalizePlatform } from '../utils/format.js';
+import { formatCurrency, normalizePlatform, renderAvatar } from '../utils/format.js';
 import { updateGreeting } from '../utils/greeting.js';
 const elements = {
     currentDate: document.getElementById('currentDate'),
@@ -11,6 +11,7 @@ const elements = {
     jmGananciaEfectivo: document.getElementById('jmGananciaEfectivo'),
     jmGananciaDigital: document.getElementById('jmGananciaDigital'),
     consolidadoNeto: document.getElementById('consolidadoNeto'),
+    goalProgressBar: document.getElementById('goalProgressBar'),
     // New UI elements
     statRides: null,
     statTime: null,
@@ -25,7 +26,7 @@ const elements = {
     paymentButtons: document.getElementById('paymentButtons'),
     amountInput: document.getElementById('amountInput'),
     addCarrera: document.getElementById('addCarrera'),
-    plataformasStats: document.getElementById('plataformasStats'),
+    plataformasStats: document.getElementById('homePlataformasStats'),
     carrerasList: document.getElementById('carrerasList'),
     listaGastos: document.getElementById('listaGastos'),
     totalGastos: document.getElementById('totalGastos')
@@ -37,7 +38,7 @@ export const renderer = {
         this.updateMetaProgress(state);
         this.updateConsolidados(state);
         this.updateStatsRow(state);
-        this.updateGoalCards(state);
+        // this.updateGoalCards(state); // Eliminado para no sobrescribir barra
         this.updateActionButtons(state);
         this.updateSummary(state);
         this.updateCarrerasList(state);
@@ -63,9 +64,9 @@ export const renderer = {
 
         if (state.jornadaIniciada) {
             noJ.style.display = 'none';
-            yesJ.style.display = 'block';
+            yesJ.style.display = 'contents';
         } else {
-            noJ.style.display = 'block';
+            noJ.style.display = 'contents';
             yesJ.style.display = 'none';
         }
     },
@@ -92,25 +93,7 @@ export const renderer = {
     },
 
     updateGoalCards(state) {
-        const meta = state.settings.meta || 0;
-        const neto = state.consolidadoNeto || 0;
-        const restante = Math.max(0, meta - neto);
-        const pct = meta > 0 ? Math.min(100, (neto / meta) * 100) : 0;
-
-        if (elements.statGoal) {
-            elements.statGoal.textContent = formatCurrency(meta);
-        }
-        if (elements.statRemaining) {
-            elements.statRemaining.textContent = formatCurrency(restante);
-            elements.statRemaining.style.color = pct >= 100 ? 'var(--emerald)' : 'var(--gold)';
-        }
-        if (elements.goalProgressBar) {
-            elements.goalProgressBar.style.width = `${pct}%`;
-            elements.goalProgressBar.style.background = pct >= 100 ? 'var(--gold)' : 'var(--emerald)';
-        }
-        if (elements.goalProgressPct) {
-            elements.goalProgressPct.textContent = `${Math.round(pct)}%`;
-        }
+        // Función obsoleta tras el rediseño. La lógica fue movida a updateMetaProgress
     },
 
     updateRenderPlatformButtons(state) {
@@ -194,8 +177,35 @@ export const renderer = {
             elements.consolidadoNeto.textContent = formatCurrency(totalNeto);
         }
 
+        const progressBar = document.getElementById('goalProgressBar');
+        if (progressBar) {
+            const cappedPercent = Math.min(100, Math.max(0, porcentaje));
+            progressBar.style.width = `${cappedPercent}%`;
+
+            if (porcentaje > 100) {
+                progressBar.style.background = 'var(--gold)';
+                progressBar.style.boxShadow = '0 0 14px var(--gold-glow)';
+            } else if (porcentaje === 100) {
+                progressBar.style.background = 'var(--emerald)';
+                progressBar.style.boxShadow = '0 0 16px var(--emerald-glow)';
+            } else if (porcentaje >= 75) {
+                progressBar.style.background = '#34d399'; // Verde claro acercándose
+                progressBar.style.boxShadow = '0 0 10px rgba(52, 211, 153, 0.4)';
+            } else if (porcentaje >= 40) {
+                progressBar.style.background = 'var(--cyan)';
+                progressBar.style.boxShadow = '0 0 10px var(--cyan-glow)';
+            } else {
+                progressBar.style.background = 'var(--ruby)';
+                progressBar.style.boxShadow = '0 0 10px var(--ruby-glow)';
+            }
+        }
+
         if (elements.porcentajeDisplay) {
-            elements.porcentajeDisplay.textContent = `${porcentaje}%`;
+            elements.porcentajeDisplay.textContent = `${porcentaje}% de ${formatCurrency(meta)}`;
+            elements.porcentajeDisplay.style.fontSize = '14px';
+            elements.porcentajeDisplay.style.fontWeight = '800';
+            elements.porcentajeDisplay.style.color = 'var(--text-primary)';
+            elements.porcentajeDisplay.style.textTransform = 'none';
         }
 
         // Motivational row (Premium Overhaul)
@@ -232,10 +242,12 @@ export const renderer = {
 
             // 3. Motivational Message Logic
             if (porcentaje >= 100) {
-                elements.remainingDisplay.textContent = '¡Meta lograda!';
+                elements.remainingDisplay.textContent = '¡Meta superada!';
                 elements.remainingDisplay.style.color = 'var(--gold)';
-                elements.remainingDisplay.style.fontSize = '12px';
-                elements.remainingDisplay.style.fontWeight = '700';
+                elements.remainingDisplay.style.fontSize = '14px';
+                elements.remainingDisplay.style.fontWeight = '800';
+                elements.remainingDisplay.style.letterSpacing = 'normal';
+                
                 if (motivIconContainer) {
                     motivIconContainer.className = 'icon-box small gold';
                     motivIconContainer.style.color = 'var(--gold)';
@@ -248,19 +260,12 @@ export const renderer = {
                 }
                 if (motivIconSvg) motivIconSvg.innerHTML = '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'; // Reloj icon
                 
-                elements.remainingDisplay.style.fontSize = '10px';
-                elements.remainingDisplay.style.fontWeight = '600';
-                elements.remainingDisplay.style.letterSpacing = '0.3px';
-                elements.remainingDisplay.style.color = 'var(--text-secondary)';
-
-                const diffMs = state.jornadaInicio ? Date.now() - new Date(state.jornadaInicio).getTime() : 0;
-                const hours = diffMs / 3600000;
-                if (hours > 0.05 && totalNeto > 0) {
-                    const perHour = totalNeto / hours;
-                    elements.remainingDisplay.textContent = `$${(perHour / 1000).toFixed(1)}k/h · ~${Math.max(0, remaining/1000).toFixed(0)}k resta`;
-                } else {
-                    elements.remainingDisplay.textContent = `Calculando... · ~${Math.max(0, remaining/1000).toFixed(0)}k resta`;
-                }
+                elements.remainingDisplay.style.fontSize = '14px';
+                elements.remainingDisplay.style.fontWeight = '700';
+                elements.remainingDisplay.style.letterSpacing = 'normal';
+                elements.remainingDisplay.style.color = 'var(--text-primary)';
+                elements.remainingDisplay.style.textTransform = 'none';
+                elements.remainingDisplay.textContent = `Faltan ${formatCurrency(remaining)}`;
             }
         }
 
@@ -349,28 +354,40 @@ export const renderer = {
     updateSummary(state) {
         if (!elements.plataformasStats) return;
         const stats = {};
+        let totalGeneral = 0;
         state.carreras.forEach(c => {
-            if (!stats[c.platform]) stats[c.platform] = { count: 0, total: 0 };
-            stats[c.platform].count++;
-            stats[c.platform].total += c.amount;
+            const norm = normalizePlatform(c.platform, state.settings.plataformas);
+            const key = norm.name.toUpperCase();
+            if (!stats[key]) stats[key] = { count: 0, total: 0, norm: norm };
+            stats[key].count++;
+            stats[key].total += c.amount;
+            totalGeneral += c.amount;
         });
 
         // Ordenar por total descendente
-        const sorted = Object.entries(stats).sort(([, a], [, b]) => b.total - a.total);
+        const sorted = Object.values(stats).sort((a, b) => b.total - a.total);
 
-        elements.plataformasStats.innerHTML = sorted.map(([platformId, data]) => {
-            const norm = normalizePlatform(platformId, state.settings.plataformas);
-            const statusLabel = norm.isActiva ? '' : '<span class="plat-not-active">• No activa</span>';
+        elements.plataformasStats.innerHTML = sorted.map((data) => {
+            const norm = data.norm;
+            const statusLabel = norm.isActiva ? '' : '<span style="font-size: 8px; font-weight: normal; opacity: 0.5; margin-left: 4px;">• No activa</span>';
+            const pct = totalGeneral > 0 ? Math.round((data.total / totalGeneral) * 100) : 0;
+            const avatarHtml = renderAvatar(norm);
 
             return `
-                <div class="platform-stat-row">
-                    <div>
-                        <div class="platform-stat-name" style="color:${norm.color}">
-                            ${norm.name}${statusLabel}
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                    ${avatarHtml}
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 800;">
+                            <span>${norm.name}${statusLabel}</span>
+                            <span>${formatCurrency(data.total)}</span>
                         </div>
-                        <div class="platform-stat-count">${data.count} ${data.count === 1 ? 'carrera' : 'carreras'}</div>
+                        <div style="width: 100%; background: var(--surface-glass); border-radius: 8px; height: 8px;">
+                            <div style="background: ${norm.color}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 10px ${norm.color}80; transition: width 1s var(--ease);"></div>
+                        </div>
                     </div>
-                    <div class="platform-stat-val">${formatCurrency(data.total)}</div>
+                    <div style="font-size: 12px; font-weight: 800; color: ${norm.color}; width: 36px; text-align: right;">
+                        ${pct}%
+                    </div>
                 </div>
             `;
         }).join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Sin datos aún</div>';
@@ -380,9 +397,12 @@ export const renderer = {
         if (!elements.carrerasList) return;
         elements.carrerasList.innerHTML = state.carreras.slice(-5).reverse().map(c => {
             const norm = normalizePlatform(c.platform, state.settings.plataformas);
+            const avatarHtml = renderAvatar(norm);
+
             return `
-                <div class="ride-item">
-                    <div class="ride-meta">
+                <div class="ride-item" style="display:flex; align-items:center; gap:12px;">
+                    ${avatarHtml}
+                    <div class="ride-meta" style="flex:1;">
                         <span class="ride-plat" style="color:${norm.color}">${norm.name}</span>
                         <span class="ride-time">${new Date(c.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} • ${c.payment.toUpperCase()}</span>
                     </div>

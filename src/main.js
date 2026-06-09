@@ -433,6 +433,36 @@ function setupEventListeners() {
         haptics.selectionChanged();
     });
 
+    // ── FAB Expandible ──
+    const mainFab = document.getElementById('mainFab');
+    const fabMenu = document.getElementById('fabMenu');
+    const fabMenuOverlay = document.getElementById('fabMenuOverlay');
+
+    const toggleFab = () => {
+        if (!mainFab) return;
+        const isOpen = mainFab.classList.contains('open');
+        if (isOpen) {
+            mainFab.classList.remove('open');
+            if (fabMenu) fabMenu.classList.remove('open');
+            if (fabMenuOverlay) fabMenuOverlay.classList.remove('open');
+        } else {
+            mainFab.classList.add('open');
+            if (fabMenu) fabMenu.classList.add('open');
+            if (fabMenuOverlay) fabMenuOverlay.classList.add('open');
+            haptics.selectionChanged();
+        }
+    };
+
+    if (mainFab) mainFab.addEventListener('click', toggleFab);
+    if (fabMenuOverlay) fabMenuOverlay.addEventListener('click', toggleFab);
+
+    // Cierra el FAB al hacer clic en cualquier ítem
+    document.querySelectorAll('.fab-grid-item').forEach(item => {
+        item.addEventListener('click', () => {
+            if (mainFab && mainFab.classList.contains('open')) toggleFab();
+        });
+    });
+
     // ── Logout ──
     bind('logoutBtn', 'click', () => authModule.logout());
 

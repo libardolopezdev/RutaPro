@@ -43,7 +43,7 @@ export function normalizePlatform(platformId, settingsPlatforms = []) {
     // 2. Mapeos Legacy
     const legacyMap = {
         'mano': { name: 'MANO', color: '#7C3AED' },
-        'cabify': { name: 'MANO', color: '#7C3AED' },
+        'cabify': { name: 'CABIFY', color: '#7C3AED' },
         'coop': { name: 'COOPEBOMBAS', color: '#1976D2' },
         'uber': { name: 'UBER', color: '#000000' },
         'didi': { name: 'DIDI', color: '#FF4700' },
@@ -80,4 +80,34 @@ export function getPlatformColor(platform, plataformas = []) {
 export function getPlatformName(platformId, plataformas = []) {
     const norm = normalizePlatform(platformId, plataformas);
     return norm.isActiva ? norm.name : `${norm.name} • No activa`;
+}
+
+export function getLogoUrl(nombrePlataforma) {
+    const nombre = nombrePlataforma
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "");
+    
+    return `https://logo.clearbit.com/${nombre}.com`;
+}
+  
+export function renderAvatar(plataforma) {
+    const logoUrl = getLogoUrl(plataforma.name);
+    const iniciales = plataforma.name.substring(0, 2).toUpperCase();
+
+    return `
+      <div class="avatar-container" style="position: relative; width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.05); border: 1px solid ${plataforma.color}40; display: flex; align-items: center; justify-content: center;">
+        <img 
+          src="${logoUrl}" 
+          alt="${plataforma.name}"
+          class="logo-img"
+          style="width: 100%; height: 100%; object-fit: cover; display: block;"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+        />
+        <div class="avatar-fallback" style="display:none; width: 100%; height: 100%; align-items: center; justify-content: center; background: rgba(255,255,255,0.05);">
+          <span style="color: ${plataforma.color}; font-weight: 900; font-size: 11px;">${iniciales}</span>
+        </div>
+      </div>
+    `;
 }

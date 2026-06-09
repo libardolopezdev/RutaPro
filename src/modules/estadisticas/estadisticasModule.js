@@ -4,7 +4,7 @@
 import { store } from '../../state/store.js';
 import { storageService } from '../../services/storageService.js';
 import { firestoreService } from '../../services/firestoreService.js';
-import { formatCurrency, getPlatformName, normalizePlatform } from '../../utils/format.js';
+import { formatCurrency, getPlatformName, normalizePlatform, renderAvatar } from '../../utils/format.js';
 
 let gananciasChartInstance = null;
 let mediosPagoChartInstance = null;
@@ -185,15 +185,18 @@ export const estadisticasModule = {
             const prom = st.count > 0 ? (st.total / st.count) : 0;
             const pctFill = (st.total / maxMonto) * 100;
             const isBest = id === bestPromedioId;
+            const normMinimal = { name: st.name.replace(' (Inactiva)', ''), color: st.color };
+            const avatarHtml = renderAvatar(normMinimal);
 
             return `
                 <div class="pr-item">
-                    <div class="pr-header">
+                    <div class="pr-header" style="display:flex; align-items:center; gap:8px;">
+                        ${avatarHtml}
                         <span class="pr-name" style="color:${st.color}">
                             ${st.name} 
                             ${isBest ? '<span class="pr-badge">⭐ Más rentable</span>' : ''}
                         </span>
-                        <span class="pr-amount">${formatCurrency(st.total)}</span>
+                        <span class="pr-amount" style="margin-left:auto;">${formatCurrency(st.total)}</span>
                     </div>
                     <div class="pr-sub">
                         <span>${st.count} carreras</span>

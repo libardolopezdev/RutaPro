@@ -105,275 +105,94 @@
             </header>
 
             <!-- SALUDO -->
-            <div style="padding: 2px 0 10px;">
-                <p id="currentDate" style="font-size:13px; color:var(--text-muted);">-</p>
-                <h1 id="greetingText"
-                    style="font-size:16px; font-weight:600; color:var(--text-primary); margin-top:4px; line-height: 1.4;">
-                    Tu meta te está esperando,<br>
-                    <span style="color:var(--emerald);">¡arranca!</span> 💪
-                </h1>
+            <div style="padding: 2px 0 16px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <p id="currentDate" style="font-size:11px; color:var(--text-muted); margin-bottom: 4px; font-weight: 600; text-transform: capitalize;">-</p>
+                    <h1 id="greetingText" style="font-size:16px; font-weight:700; color:var(--text-primary); margin:0; line-height: 1.3;">
+                        ¡Buenos días, Juan!
+                    </h1>
+                </div>
             </div>
 
-            <!-- HERO CARD (GAUGE) - New Split Layout -->
-            <div class="glass-card" id="heroGananciasCard"
-                style="position:relative; padding:18px 20px 16px; max-width:480px; margin:0 auto; width:100%; box-sizing:border-box;">
+            <!-- HERO CARD (EARNINGS SUMMARY) -->
+            <div class="glass-card" id="heroGananciasCard" style="padding: 24px; border-radius: 28px;">
+                <!-- Top Row -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">
+                        GANANCIAS DEL DÍA
+                        <svg fill="none" height="10" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="10"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+                    </div>
+                </div>
+                
+                <!-- Main Value -->
+                <div>
+                    <h2 id="consolidadoNeto" style="font-size: 46px; font-weight: 800; font-family: 'JetBrains Mono', monospace; line-height: 1; margin: 0; color: var(--text-primary); letter-spacing: -1.5px;">$0</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 6px; font-weight: 600;">Total ganado hoy</p>
+                </div>
 
-                <!-- Card Header -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                    <span
-                        style="font-size:11px; font-weight:800; letter-spacing:2px; color:var(--text-muted); text-transform:uppercase;">Ganancias
-                        Hoy</span>
-                    <div id="heroProgressBadge"
-                        style="display:flex; align-items:center; gap:5px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); padding:4px 10px; border-radius:20px; transition:all 0.4s ease;">
-                        <div id="heroProgressBadgeIcon" class="icon-box emerald small"
-                            style="background:none; width:auto; height:auto;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                                <path d="M4 22h16" />
-                                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-                                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-                                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-                            </svg>
-                        </div>
-                        <span id="heroProgressBadgeLabel"
-                            style="font-size:11px; font-weight:800; color:var(--emerald); letter-spacing:0.5px;">INICIO</span>
+                <!-- Progress Bar Section -->
+                <div style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                        <span id="remainingDisplay" style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Calculando...</span>
+                        <span id="porcentajeDisplay" style="font-size: 12px; color: var(--text-muted); font-weight: 800;">0%</span>
+                    </div>
+                    <div style="width: 100%; background: var(--surface-glass); border-radius: 8px; height: 8px; overflow: hidden; border: 1px solid var(--border-glass);">
+                        <div id="goalProgressBar" style="background: var(--emerald); height: 100%; border-radius: 8px; width: 0%; transition: width 1s var(--ease); box-shadow: 0 0 10px var(--emerald-glow);"></div>
                     </div>
                 </div>
 
-                <!-- Split Body: Gauge Left + Stats Right -->
-                <div style="display:flex; align-items:center; gap:16px;">
-
-                    <!-- LEFT: Gauge -->
-                    <div style="position:relative; width:148px; height:148px; flex-shrink:0;">
-                        <svg viewBox="0 0 200 200"
-                            style="width:148px; height:148px; overflow:visible; transform:rotate(120deg);">
-                            <defs>
-                                <linearGradient id="gaugeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-                                    <stop offset="0%" stop-color="var(--emerald)" />
-                                    <stop offset="70%" stop-color="var(--emerald)" />
-                                    <stop offset="100%" stop-color="var(--gold)" />
-                                </linearGradient>
-                            </defs>
-                            <circle class="gauge-bg-circle" cx="100" cy="100" r="88" fill="none"
-                                stroke="var(--gauge-bg)" stroke-width="14" stroke-linecap="round"
-                                stroke-dasharray="461.81 552.92" stroke-dashoffset="0"></circle>
-                            <circle id="progressCircleMeta" cx="100" cy="100" r="88" fill="none"
-                                stroke="url(#gaugeGradient)" stroke-width="14" stroke-linecap="round"
-                                stroke-dasharray="461.81 552.92" stroke-dashoffset="461.81"
-                                style="transition:stroke-dashoffset 1.5s cubic-bezier(0.16,1,0.3,1); filter:drop-shadow(0 0 10px var(--emerald-glow));">
-                            </circle>
-                        </svg>
-                        <!-- Center text -->
-                        <div
-                            style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; pointer-events:none;">
-                            <span id="consolidadoNeto"
-                                style="font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:800; letter-spacing:-0.8px; line-height:1; color:var(--text-primary); white-space:nowrap;">$0</span>
-                            <div id="editMetaDashboardBtn" style="display:flex; align-items:center; gap:4px; pointer-events:auto; cursor:pointer; padding:4px; border-radius:8px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='none'">
-                                <span id="heroMetaLabel"
-                                    style="font-size:9px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; white-space:nowrap;">/
-                                    $0k meta</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; color:var(--text-muted);">
-                                    <path d="M12 20h9"></path>
-                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                </svg>
-                            </div>
-                        </div>
+                <!-- Bottom Row: Symmetrical mini-cards -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; border: 1px solid var(--border-glass); display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'" onclick="window.openPaymentDetail && window.openPaymentDetail('efectivo')">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">EFECTIVO</span>
+                        <span id="gananciaEfectivo" style="font-size: 20px; font-weight: 800; color: var(--gold); font-family: 'JetBrains Mono', monospace;">$0</span>
                     </div>
-
-                    <!-- RIGHT: Stats -->
-                    <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
-
-                        <!-- Progreso row -->
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <div class="icon-box small emerald">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-                                        <polyline points="16 7 22 7 22 13" />
-                                    </svg>
-                                </div>
-                                <span
-                                    style="font-size:12px; color:var(--text-secondary); font-weight:600;">Progreso</span>
-                            </div>
-                            <span id="porcentajeDisplay"
-                                style="font-size:14px; font-weight:800; color:var(--emerald);">0%</span>
-                        </div>
-
-                        <!-- Divider -->
-                        <div style="height:1px; background:rgba(255,255,255,0.06);"></div>
-
-                        <div id="btnDetailEfectivo" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="window.openPaymentDetail && window.openPaymentDetail('efectivo')">
-                            <div style="display:flex; align-items:center; gap:7px;">
-                                <div class="icon-box small emerald">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <rect width="20" height="12" x="2" y="6" rx="2" />
-                                        <circle cx="12" cy="12" r="2" />
-                                        <path d="M6 12h.01M18 12h.01" />
-                                    </svg>
-                                </div>
-                                <span
-                                    style="font-size:12px; color:var(--text-secondary); font-weight:600;">Efectivo</span>
-                            </div>
-                            <span id="gananciaEfectivo"
-                                style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:800; color:var(--text-primary);">$0</span>
-                        </div>
-
-                        <div id="btnDetailDigital" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="window.openPaymentDetail && window.openPaymentDetail('digital')">
-                            <div style="display:flex; align-items:center; gap:7px;">
-                                <div class="icon-box small blue">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <rect width="20" height="14" x="2" y="5" rx="2" />
-                                        <line x1="2" x2="22" y1="10" y2="10" />
-                                    </svg>
-                                </div>
-                                <span
-                                    style="font-size:12px; color:var(--text-secondary); font-weight:600;">Digital</span>
-                            </div>
-                            <span id="gananciaDigital"
-                                style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:800; color:var(--text-primary);">$0</span>
-                        </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 16px; border: 1px solid var(--border-glass); display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'" onclick="window.openPaymentDetail && window.openPaymentDetail('digital')">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">DIGITAL</span>
+                        <span id="gananciaDigital" style="font-size: 20px; font-weight: 800; color: var(--emerald); font-family: 'JetBrains Mono', monospace;">$0</span>
                     </div>
                 </div>
-
-
             </div>
 
-            <div style="display:none;" id="metaDisplay"></div>
-
-            <!-- PREMIUM STAT BADGES (OUTSIDE THE CARD) -->
-            <div id="heroMotivMsg" class="p-badge-group"
-                style="justify-content:center; gap:8px; margin-top:16px; margin-bottom:24px;">
-
-                <!-- Pill 1: Motivational / Remaining -->
-                <div id="heroMotivContainer" class="p-badge"
-                    style="border-color: rgba(234, 179, 8, 0.4); background: rgba(234, 179, 8, 0.05);">
-                    <div id="heroMotivIconContainer" class="icon-box small"
-                        style="width:auto; height:auto; padding:0; background:none; border:none; color:var(--gold); display:flex; align-items:center;">
-                        <svg id="heroMotivIconSvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                            style="width:14px; height:14px;">
-                            <path
-                                d="m12 3-1.912 5.813a2 2 0 0 1-1.27 1.27L3 12l5.813 1.912a2 2 0 0 1 1.27 1.27L12 21l1.912-5.813a2 2 0 0 1 1.27-1.27L21 12l-5.813-1.912a2 2 0 0 1-1.27-1.27L12 3Z" />
-                        </svg>
+            <!-- PLATFORM PERFORMANCE & SECONDARY METRICS -->
+            <div style="margin-top: 24px; margin-bottom: 24px;">
+                <h3 style="display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 2px; font-weight: 800; margin-bottom: 16px;">
+                    <svg fill="none" height="14" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    Rendimiento por plataforma
+                </h3>
+                
+                <div id="homePlataformasStats" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+                    <!-- Placeholder, will be populated by JS -->
+                    <div style="text-align: center; color: var(--text-muted); font-size: 12px;">
+                        Sin datos aún
                     </div>
-                    <span id="remainingDisplay" class="p-val" style="color:var(--gold);">Estableciendo meta...</span>
                 </div>
 
-                <!-- Pill 2: Carreras -->
-                <div id="pillCarreras" class="p-badge"
-                    onclick="import('./src/modules/carreras/carrerasModule.js').then(m => m.carrerasModule.openDetail())">
-                    <div class="icon-box small"
-                        style="width:auto; height:auto; padding:0; background:none; border:none; color:var(--text-secondary); display:flex; align-items:center;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;">
-                            <path
-                                d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-                            <circle cx="7" cy="17" r="2" />
-                            <path d="M9 17h6" />
-                            <circle cx="17" cy="17" r="2" />
-                        </svg>
+                <!-- Secondary Metrics -->
+                <div style="border-top: 1px solid var(--border-glass); padding-top: 16px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+                    <div style="display: flex; gap: 16px; cursor: pointer;" onclick="import('./src/modules/carreras/carrerasModule.js').then(m => m.carrerasModule.openDetail())">
+                        <p>Carreras hoy: <span id="metaStatRides" style="color: var(--text-primary); font-weight: 800;">0</span></p>
+                        <p>Tiempo: <span id="metaStatTime" style="color: var(--text-primary); font-weight: 800;">0h</span></p>
                     </div>
-                    <span id="metaStatRides" class="p-val" style="color:white;">0</span>
-                    <span class="p-lbl">carreras</span>
                 </div>
+            </div>
 
-                <!-- Pill 3: Tiempo / Estado -->
-                <div id="pillTiempo" class="p-badge"
-                    onclick="import('./src/modules/carreras/carrerasModule.js').then(m => m.carrerasModule.openDetail())">
-                    <div class="icon-box small"
-                        style="width:auto; height:auto; padding:0; background:none; border:none; color:var(--text-secondary); display:flex; align-items:center;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                    </div>
-                    <span id="metaStatTime" class="p-val" style="color:white;">0h</span>
-                    <div id="pillTiempoStatus" class="p-status" style="display:none;">
-                        <div class="status-dot active"></div>
-                        <span id="pillTiempoLabel">Activo</span>
-                    </div>
-                    <span id="pillTiempoDefault" class="p-lbl">tiempo</span>
-                </div>
+            <div style="display:none;">
+                <span id="heroMetaLabel"></span>
+                <span id="goalProgressPct"></span>
+                <div id="pillTiempoStatus"><div class="status-dot active"></div></div>
+                <span id="pillTiempoDefault"></span>
+                <svg id="heroMotivIconSvg"></svg>
+                <div id="heroMotivIconContainer"></div>
+                <div id="heroProgressBadgeIcon"></div>
+                <div id="heroProgressBadgeLabel"></div>
+                <div id="heroProgressBadge"></div>
+                <div id="progressCircleMeta"></div>
             </div>
 
 
 
-            <!-- ACTION BUTTONS -->
-            <div class="action-area" style="padding: 0;">
-                <!-- Sin jornada -->
-                <div id="actNoJornada">
-                    <button id="jornadaBtn" class="btn-ultra btn-emerald"
-                        style="width:100%; min-height:56px; max-height: 56px; border-radius:16px; font-size:16px; font-weight:800; letter-spacing:1px; box-shadow: 0 8px 30px rgba(16, 185, 129, 0.25);">▶
-                        INICIAR JORNADA</button>
-                </div>
-                <!-- <!-- Jornada activa -->
-                <div id="actJornada" style="display:none;">
-                    <!-- Botón principal -->
-                    <button id="btnNuevaCarreraFAB" class="btn-ultra btn-emerald"
-                        style="margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:10px;">
-                        <div class="icon-box glass small"
-                            style="background:rgba(255,255,255,0.15); border:none; color:white;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19" />
-                                <line x1="5" y1="12" x2="19" y2="12" />
-                            </svg>
-                        </div>
-                        NUEVA CARRERA
-                    </button>
-                    <!-- Fila de 3 botones secundarios -->
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-                        <button id="btnRegistrarGastoFAB" class="btn-ultra"
-                            style="border:1px solid rgba(16,185,129,0.3); color:var(--emerald); background:rgba(16,185,129,0.06); font-size:11px; display:flex; align-items:center; justify-content:center; gap:5px; height:48px;">
-                            <div class="icon-box small emerald" style="background:none; width:auto; height:auto;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-                                    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-                                </svg>
-                            </div>
-                            GASTO
-                        </button>
-                        <button id="btnCompartirActiva" class="btn-ultra"
-                            style="border:1px solid var(--border-glass); color:var(--text-secondary); background:var(--surface-glass); font-size:11px; display:flex; align-items:center; justify-content:center; gap:5px; height:48px;">
-                            <div class="icon-box small glass"
-                                style="background:none; border:none; width:auto; height:auto; color:inherit;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="18" cy="5" r="3" />
-                                    <circle cx="6" cy="12" r="3" />
-                                    <circle cx="18" cy="19" r="3" />
-                                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                                </svg>
-                            </div>
-                            SHARE
-                        </button>
-                        <button id="btnFinalizarJornada" class="btn-ultra"
-                            style="border:1px solid rgba(239,68,68,0.4); color:var(--ruby); background:rgba(239,68,68,0.06); font-size:11px; display:flex; align-items:center; justify-content:center; gap:5px; height:48px;">
-                            <div class="icon-box small ruby" style="background:none; width:auto; height:auto;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-                                    <line x1="12" y1="2" x2="12" y2="12" />
-                                </svg>
-                            </div>
-                            OFF
-                        </button>
-                    </div>
-                </div>
-
-
-            </div><!-- /.action-area -->
-
-            <!-- Elements requeridos por renderer (ocultos, se usan en modales) -->
+            <!-- Los elementos viejos de renderer (ocultos) -->
             <div style="display:none;">
                 <div id="carrerasList"></div>
                 <div id="plataformasStats"></div>
@@ -384,19 +203,23 @@
                 <div id="appContent"></div>
                 <div id="statGoal"></div>
                 <div id="statRemaining"></div>
-                <div id="goalProgressBar"></div>
                 <span id="goalProgressPct"></span>
                 <div id="metaDisplay"></div>
             </div>
 
         </div><!-- /.app-container -->
 
-        <!-- NAVIGATION DOCK — 4 botones -->
-        <nav class="nav-dock">
+        <!-- FAB MENU OVERLAY -->
+        <div class="fab-menu-overlay" id="fabMenuOverlay"></div>
+
+        <!-- OVERLAY DEL FAB (Z-index: 950) -->
+        <div class="fab-menu-overlay" id="fabMenuOverlay"></div>
+
+        <!-- NEW BOTTOM NAV (Z-index: 900) -->
+        <nav class="bottom-nav">
             <div class="nav-btn active" id="navHoy">
                 <div class="icon-box glass small">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                        stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <rect width="7" height="9" x="3" y="3" rx="1" />
                         <rect width="7" height="5" x="14" y="3" rx="1" />
                         <rect width="7" height="9" x="14" y="12" rx="1" />
@@ -405,10 +228,13 @@
                 </div>
                 <span>Inicio</span>
             </div>
+
+            <!-- Espacio vacío en medio de la grid -->
+            <div style="width: 72px;"></div>
+
             <div class="nav-btn" id="navHistorico">
                 <div class="icon-box glass small">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                        stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="20" x2="18" y2="10" />
                         <line x1="12" y1="20" x2="12" y2="4" />
                         <line x1="6" y1="20" x2="6" y2="14" />
@@ -416,17 +242,56 @@
                 </div>
                 <span>Reportes</span>
             </div>
-            <div class="nav-btn" id="navEstadisticas">
-                <div class="icon-box glass small">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-                        <path d="M22 12A10 10 0 0 0 12 2v10z" />
-                    </svg>
-                </div>
-                <span>Estadísticas</span>
+            
+            <div class="nav-btn" id="navEstadisticas" style="display: none;">
+                <!-- Oculto para que no rompa el JS existente si hay referencias -->
             </div>
         </nav>
+
+        <!-- CONTENEDOR DE ACCIONES (Z-index: 1000) -->
+        <div class="fab-grid" id="fabMenu">
+            <!-- CONTENEDOR NO JORNADA -->
+            <div id="actNoJornada" style="display: contents;">
+                <div class="fab-grid-item" id="jornadaBtn" style="grid-column: span 2;">
+                    <button class="fab-action-btn" style="background:#00E676; color:white;">▶</button>
+                    <span class="fab-action-label">Iniciar Turno</span>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR JORNADA ON -->
+            <div id="actJornada" style="display:none; contents;">
+                <!-- Fila superior -->
+                <div class="fab-grid-item" id="btnFinalizarJornada">
+                    <button class="fab-action-btn" style="background:#FF5252; color:white;">⏹</button>
+                    <span class="fab-action-label">Finalizar Turno</span>
+                </div>
+                <div class="fab-grid-item" id="btnCompartirActiva">
+                    <button class="fab-action-btn" style="background:#448AFF; color:white;">📤</button>
+                    <span class="fab-action-label">Compartir</span>
+                </div>
+                <!-- Fila inferior -->
+                <div class="fab-grid-item" id="btnNuevaCarreraFAB">
+                    <button class="fab-action-btn" style="background:#00E676; color:white;">➕</button>
+                    <span class="fab-action-label">N.Carrera</span>
+                </div>
+                <div class="fab-grid-item" id="btnRegistrarGastoFAB">
+                    <button class="fab-action-btn" style="background:#FFD600; color:#1A1A2E;">💸</button>
+                    <span class="fab-action-label">Anotar Gasto</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAB CENTRAL (Z-index: 1001) -->
+        <!-- Usamos un wrapper fijo en la misma posición de bottom-nav (bottom: 16px) 
+             y de ancho completo, así `margin: 0 auto` centrará perfectamente el botón -->
+        <div style="position: fixed; bottom: 16px; left: 16px; right: 16px; pointer-events: none; z-index: 1001; display: flex; justify-content: center; height: 64px; align-items: center;">
+            <div class="fab-main" id="mainFab" style="pointer-events: auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="28" height="28" style="color: #1A1A2E;">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </div>
+        </div>
     </div>
 
     <!-- ===== SECCIÓN REPORTES ===== -->
