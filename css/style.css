@@ -54,118 +54,222 @@
 }
 
 [data-theme="light"] {
-    /* Premium Pearl UI Palette */
-    --bg-obsidian: #F0F2F5;
+    /* Clean Minimal Light Palette */
+    --bg-obsidian: #F5F5F5;
     --bg-sapphire: #FFFFFF;
     --bg-overlay: rgba(0, 0, 0, 0.4);
-
-    /* Crisp Surfaces */
     --surface-base: #FFFFFF;
-    --surface-glass: #FFFFFF;
-    --surface-glass-light: #F8F9FC;
-    
-    /* High Contrast Typography */
+    --surface-glass: #F4F4F4;
+    --surface-glass-light: #EBEBEB;
     --text-primary: #0D1117;
     --text-secondary: #6B7280;
-    --text-muted: #94A3B8;
-    
-    /* Borders & Elevated Depth */
-    --border-glass: rgba(0,0,0,0.06);
+    --text-muted: #9CA3AF;
+    --border-glass: rgba(0,0,0,0.07);
     --shadow-soft: 0px 2px 8px rgba(0, 0, 0, 0.06);
     --shadow-premium: 0 2px 16px rgba(0,0,0,0.08);
-    --shadow-emerald: 0px 6px 16px rgba(0, 200, 83, 0.15);
-    
-    /* Semantic Glows for Light Mode */
-    --emerald-glow: rgba(0, 200, 83, 0.2);
+    --shadow-emerald: none;
+    --emerald-glow: rgba(46, 168, 79, 0.2);
     --gold-glow: rgba(245, 158, 11, 0.2);
     --ruby-glow: rgba(244, 67, 54, 0.2);
     --indigo-glow: rgba(99, 102, 241, 0.15);
-    
-    /* Gauge Tracks */
     --gauge-bg: rgba(0, 0, 0, 0.06);
-
-    /* Uber dynamic */
     --uber-color: #0D1117;
     --uber-glow: rgba(0, 0, 0, 0.06);
-    --uber-bg: #FFFFFF;
-
-    /* Accents */
-    --emerald: #00C853;
-    --ruby: #F44336;
-    --gold: #F59E0B;
+    --uber-bg: #F4F4F4;
+    --emerald: #2EA84F;
+    --ruby: #EF4444;
+    --gold: #D97706;
+    --blue: #3B82F6;
+    --cyan: #06B6D4;
 }
 
-/* Light mode specific element overrides */
-[data-theme="light"] .glass-card {
-    background: #FFFFFF;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    border-radius: 20px;
-}
+/* ============================================================
+   LIGHT MODE — FULL REDESIGN (Minimal Clean)
+   ============================================================ */
 
-[data-theme="light"] .card-efectivo, 
-[data-theme="light"] .card-digital {
-    background: linear-gradient(135deg, #F8F9FC, #FFFFFF) !important;
-    border: 1px solid rgba(0,0,0,0.08) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
-}
+[data-theme="light"] body { background: #F5F5F5; }
+[data-theme="light"] .bg-glow { display: none; }
 
-[data-theme="light"] .barra-progreso {
-    background: linear-gradient(90deg, #F44336, #FF6B35) !important;
-    border-radius: 4px !important;
-    height: 6px !important;
-    box-shadow: none !important;
-}
-
-[data-theme="light"] .barra-progreso.alta {
-    background: linear-gradient(90deg, #00C853, #69F0AE) !important;
-}
-
-[data-theme="light"] header {
-    background: transparent !important;
+/* Header */
+[data-theme="light"] header,
+[data-theme="light"] .floating-header {
+    background: linear-gradient(to bottom, #F5F5F5 70%, transparent) !important;
     border-bottom: none !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
 }
-
-[data-theme="light"] .frase-motivacional {
-    color: #0D1117 !important;
-    font-weight: 600 !important;
+[data-theme="light"] .icon-box.glass {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+    color: #374151 !important;
 }
 
+/* Cards */
+[data-theme="light"] .glass-card {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    box-shadow: 0 2px 8px -2px rgba(0,0,0,0.08) !important;
+    border-radius: 20px !important;
+}
+[data-theme="light"] #heroGananciasCard { padding: 20px 20px 16px !important; }
+
+/* Labels */
+[data-theme="light"] .label-secundario {
+    color: #6B7280 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    text-transform: uppercase !important;
+}
+[data-theme="light"] #porcentajeDisplay {
+    color: #374151 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+}
+
+/* Main amount */
+[data-theme="light"] #consolidadoNeto {
+    color: #0D1117 !important;
+    font-size: 48px !important;
+    font-weight: 800 !important;
+    letter-spacing: -2px !important;
+}
+
+/* Progress bar */
+[data-theme="light"] .barra-progreso {
+    background: #2EA84F !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+[data-theme="light"] .barra-progreso.alta { background: #2EA84F !important; }
+[data-theme="light"] #goalProgressBar { background: #2EA84F !important; }
+
+/* Excedente */
+[data-theme="light"] .excedente-row { border-top: 1px solid rgba(0,0,0,0.06) !important; }
+[data-theme="light"] .label-excedente { color: rgba(0,0,0,0.4) !important; }
+[data-theme="light"] .valor-excedente { color: #2EA84F !important; font-size: 22px !important; }
+
+/* Motivational text */
+[data-theme="light"] .frase-motivacional,
+[data-theme="light"] #remainingDisplay {
+    color: #374151 !important;
+    font-weight: 700 !important;
+}
+
+/* Mini cards EFECTIVO / DIGITAL */
+[data-theme="light"] .card-efectivo,
+[data-theme="light"] .card-digital {
+    background: #F4F4F4 !important;
+    border: 1px solid rgba(0,0,0,0.06) !important;
+    box-shadow: none !important;
+    border-radius: 14px !important;
+}
+[data-theme="light"] #gananciaEfectivo { color: #D97706 !important; font-size: 22px !important; }
+[data-theme="light"] #gananciaDigital  { color: #2EA84F !important; font-size: 22px !important; }
+
+/* Footer stats */
+[data-theme="light"] .card-footer-stats {
+    color: #6B7280 !important;
+    font-size: 12px !important;
+    border-top: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+/* Plataformas section */
 [data-theme="light"] .seccion-plataformas {
     background: #FFFFFF !important;
     border-radius: 20px !important;
     padding: 16px !important;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08) !important;
-    border: 1px solid rgba(0,0,0,0.06) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    margin-top: 0 !important;
+}
+[data-theme="light"] .platform-stat-name {
+    color: #0D1117 !important;
+}
+[data-theme="light"] .platform-stat-val {
+    color: #0D1117 !important;
+}
+[data-theme="light"] .platform-stat-pct {
+    /* color is set inline via getContrastSafeColor — no override needed */
 }
 
+/* Platform buttons */
+[data-theme="light"] .platform-btn,
+[data-theme="light"] .p-chip {
+    background: #F4F4F4 !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    color: #374151 !important;
+}
+[data-theme="light"] .platform-btn.selected {
+    background: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Bottom nav */
 [data-theme="light"] .bottom-nav {
     background: #FFFFFF !important;
-    border-top: 1px solid rgba(0,0,0,0.08) !important;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
+    border-top: 1px solid rgba(0,0,0,0.07) !important;
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.07) !important;
+}
+[data-theme="light"] .nav-btn { color: #9CA3AF !important; }
+[data-theme="light"] .nav-btn.active { color: #2EA84F !important; }
+[data-theme="light"] .nav-btn span { color: inherit !important; }
+
+/* FAB */
+[data-theme="light"] .fab-main,
+[data-theme="light"] #fabNewRace {
+    background: #2EA84F !important;
+    box-shadow: 0 6px 20px rgba(46,168,79,0.4) !important;
 }
 
-[data-theme="light"] .nav-icon { 
-    color: #6B7280 !important; 
+/* Modals */
+[data-theme="light"] .modal-glass {
+    background: #FFFFFF !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+}
+[data-theme="light"] .modal-overlay {
+    background: rgba(0,0,0,0.3) !important;
+    backdrop-filter: blur(8px) !important;
 }
 
-[data-theme="light"] .nav-icon.active { 
-    color: #00C853 !important; 
+/* Bottom sheet */
+[data-theme="light"] #ridesBottomSheet {
+    background: #FFFFFF !important;
+    border-top: 1px solid rgba(0,0,0,0.07) !important;
 }
 
-[data-theme="light"] .fab-main {
-    background: #00C853 !important;
-    box-shadow: 0 4px 20px rgba(0,200,83,0.4) !important;
+/* Misc */
+[data-theme="light"] .glass-card h2,
+[data-theme="light"] .glass-card h3 { color: #0D1117 !important; }
+[data-theme="light"] .p-badge {
+    background: #F4F4F4 !important;
+    border: 1px solid rgba(0,0,0,0.06) !important;
 }
-
-[data-theme="light"] .label-secundario {
-    color: #6B7280 !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.5px !important;
-    text-transform: uppercase !important;
+[data-theme="light"] .p-badge .p-val { color: #0D1117 !important; }
+[data-theme="light"] .p-badge .p-lbl { color: #6B7280 !important; }
+[data-theme="light"] .icon-box.small {
+    background: #F4F4F4 !important;
+    border: 1px solid rgba(0,0,0,0.06) !important;
+    color: #374151 !important;
+}
+[data-theme="light"] .icon-box.small.gold {
+    background: rgba(245,158,11,0.1) !important;
+    border-color: rgba(245,158,11,0.2) !important;
+    color: #D97706 !important;
+}
+[data-theme="light"] select {
+    background-color: #F4F4F4 !important;
+    color: #0D1117 !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+}
+[data-theme="light"] .input-premium {
+    color: #0D1117 !important;
+    border-bottom-color: rgba(0,0,0,0.15) !important;
+}
+[data-theme="light"] .input-premium::placeholder {
+    color: #9CA3AF !important;
+    opacity: 1 !important;
 }
 
 
@@ -300,9 +404,6 @@ h3 {
     background: linear-gradient(to bottom, var(--bg-obsidian) 70%, transparent);
     transition: background 0.3s ease, box-shadow 0.3s ease;
 }
-
-
-
 
 .header-flex {
     display: flex;
@@ -641,29 +742,62 @@ h3 {
     min-height: 44px;
 }
 
-/* Desglose platform row */
+/* Desglose platform row -- class-based layout */
 .platform-stat-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 12px;
     margin-bottom: 14px;
 }
 
-.platform-stat-name {
-    font-weight: 800;
-    font-size: 13px;
+.platform-stat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
 }
 
-.platform-stat-count {
+.platform-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.platform-stat-name {
     font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 1px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .platform-stat-val {
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 15px;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.platform-stat-track {
+    width: 100%;
+    border-radius: 8px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.platform-stat-pct {
+    font-size: 12px;
+    font-weight: 800;
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
 }
 
 /* Modals Ultra-Premium */
@@ -2312,3 +2446,26 @@ h3 {
 
 
 
+
+.excedente-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.label-excedente {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.valor-excedente {
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFD600;
+}

@@ -65,11 +65,38 @@ export const settingsModule = {
 
     async addPlatform(name, color) {
         if (!name) return;
-        const id = name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
         const state = store.getState();
-
         const currentPlataformas = state.settings.plataformas || [];
-        const newPlataformas = [...currentPlataformas, { id, name: name.toUpperCase(), color }];
+
+        // Generar ID estable basado en el nombre (sin timestamp)
+        const nuevoId = name
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, '')   // quitar tildes
+            .replace(/[^a-z0-9]/g, '_')         // reemplazar caracteres especiales
+            .replace(/_+/g, '_')                 // colapsar guiones múltiples
+            .replace(/^_|_$/g, '');              // quitar guiones al inicio/fin
+
+        // Si ya existe ese ID exacto, no duplicar
+        const existePorId = currentPlataformas.find(p => p.id === nuevoId);
+        if (existePorId) {
+            showToast(`"${existePorId.name}" ya existe con ese nombre`, 'warning');
+            return;
+        }
+
+        // Si existe el mismo nombre (case-insensitive), no duplicar
+        const existePorNombre = currentPlataformas.find(
+            p => p.name.toLowerCase() === name.toLowerCase()
+        );
+        if (existePorNombre) {
+            showToast('Ya tienes una plataforma con ese nombre', 'warning');
+            return;
+        }
+
+        const newPlataformas = [
+            ...currentPlataformas,
+            { id: nuevoId, name: name.toUpperCase(), color }
+        ];
         const newSettings = { ...state.settings, plataformas: newPlataformas };
 
         store.setState({ settings: newSettings });
@@ -83,7 +110,7 @@ export const settingsModule = {
         }
 
         this.renderPlatformManager(newPlataformas);
-        showToast(`Plataforma ${name} agregada`, 'success');
+        showToast(`Plataforma ${name.toUpperCase()} agregada`, 'success');
     },
 
     async removePlatform(id) {

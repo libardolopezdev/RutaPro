@@ -139,6 +139,7 @@
                     <div style="width: 100%; background: var(--surface-glass); border-radius: 8px; height: 8px; overflow: hidden; border: 1px solid var(--border-glass);">
                         <div id="goalProgressBar" class="barra-progreso" style="height: 100%; width: 0%; transition: width 1s var(--ease);"></div>
                     </div>
+                    <div id="excedenteRow" class="excedente-row" style="display:none;"></div>
                 </div>
 
                 <!-- Bottom Row: Symmetrical mini-cards -->
@@ -189,20 +190,6 @@
 
 
 
-            <!-- Los elementos viejos de renderer (ocultos) -->
-            <div style="display:none;">
-                <div id="carrerasList"></div>
-                <div id="plataformasStats"></div>
-                <div id="jornadaMainCard"></div>
-                <div id="jornadaIcon"></div>
-                <div id="jornadaTitle"></div>
-                <div id="jornadaInfo"></div>
-                <div id="appContent"></div>
-                <div id="statGoal"></div>
-                <div id="statRemaining"></div>
-                <span id="goalProgressPct"></span>
-                <div id="metaDisplay"></div>
-            </div>
 
         </div><!-- /.app-container -->
 
@@ -214,16 +201,14 @@
 
         <!-- NEW BOTTOM NAV (Z-index: 900) -->
         <nav class="bottom-nav">
-            <div class="nav-btn active" id="navHoy">
+            <div class="nav-btn active" id="navEstadisticas">
                 <div class="icon-box glass small">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="7" height="9" x="3" y="3" rx="1" />
-                        <rect width="7" height="5" x="14" y="3" rx="1" />
-                        <rect width="7" height="9" x="14" y="12" rx="1" />
-                        <rect width="7" height="5" x="3" y="16" rx="1" />
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                        <path d="M22 12A10 10 0 0 0 12 2v10z" />
                     </svg>
                 </div>
-                <span>Inicio</span>
+                <span>Estadísticas</span>
             </div>
 
             <!-- Espacio vacío en medio de la grid -->
@@ -238,10 +223,6 @@
                     </svg>
                 </div>
                 <span>Reportes</span>
-            </div>
-            
-            <div class="nav-btn" id="navEstadisticas" style="display: none;">
-                <!-- Oculto para que no rompa el JS existente si hay referencias -->
             </div>
         </nav>
 
@@ -747,7 +728,7 @@
 
                 <!-- 4. Ranking de plataformas -->
                 <div class="stats-section-box">
-                    <h4 class="stats-section-title">Rendimiento por Plataforma</h4>
+                    <h4 class="stats-section-title">Ranking de plataformas</h4>
                     <div id="stPlatformRanking" class="platform-ranking-list">
                         <!-- Dynamic content -->
                     </div>

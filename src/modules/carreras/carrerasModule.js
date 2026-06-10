@@ -3,7 +3,7 @@
  */
 import { store } from '../../state/store.js';
 import { showToast } from '../../utils/ui-utils.js';
-import { formatCurrency, getPlatformName } from '../../utils/format.js';
+import { formatCurrency, getPlatformName, normalizePlatform, renderAvatar } from '../../utils/format.js';
 import { firestoreService } from '../../services/firestoreService.js';
 
 // Persiste jornada activa (carreras + gastos) en Firestore para sincronización entre dispositivos.
@@ -46,6 +46,7 @@ function stopJornadaTimer() {
         jornadaTimerInterval = null;
     }
 }
+
 
 export const carrerasModule = {
     toggleJornada() {
@@ -357,24 +358,15 @@ export const carrerasModule = {
             // Generar HTML de las carreras
             // Las ordenamos de más reciente a más antigua
             const carrerasHTML = [...state.carreras].reverse().map(c => {
-                const name = getPlatformName(c.platform, state.settings.plataformas);
-                const initial = name.charAt(0).toUpperCase();
+                const plataforma = normalizePlatform(c.platform, state.settings.plataformas);
+                const name = plataforma.name;
                 const time = new Date(c.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                
-                // Determinar color de la inicial basado en la plataforma
-                let dotColor = '#00E676';
-                if (c.platform === 'cabify') dotColor = '#7A52F4';
-                else if (c.platform === 'indriver') dotColor = '#00E676';
-                else if (c.platform === 'uber') dotColor = '#FFFFFF';
-                else if (c.platform === 'didi') dotColor = '#FF7A00';
-                else if (c.platform === 'picap') dotColor = '#FF00A5';
+                const avatarHtml = renderAvatar(plataforma);
 
                 return `
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: ${dotColor};">
-                                ${initial}
-                            </div>
+                            ${avatarHtml}
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <span style="font-size: 14px; font-weight: 700; color: white;">${name}</span>
                                 <span style="font-size: 11px; color: var(--text-muted);">${time}</span>

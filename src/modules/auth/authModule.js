@@ -10,14 +10,44 @@ let activeJornadaUnsub = null;
 
 export const authModule = {
     init() {
-        auth.onAuthStateChanged(user => {
+        auth.onAuthStateChanged(async user => {
             const splash = document.getElementById('splashScreen');
             if (splash) splash.style.display = 'none';
 
             if (user) {
                 store.setState({ user });
+                
+                // MIGRATION / SYNC: Force Firestore settings to win over localStorage
+                try {
+                    const settingsData = await firestoreService.getSettings(user.uid);
+                    if (settingsData) {
+                        // Limpiar y reescribir con datos frescos (Firestore gana)
+                        store.setState({ settings: settingsData });
+                    }
+                } catch (err) {
+                    console.warn("No se pudo cargar config de Firestore (modo offline probable)", err);
+                }
+
+                // Suscripción en tiempo real a settings
+                if (!this.settingsUnsub) {
+                    this.settingsUnsub = firestoreService.subscribeToSettings(
+                        user.uid,
+                        (remoteSettings) => {
+                            if (remoteSettings) {
+                                store.setState({ settings: remoteSettings });
+                            }
+                        }
+                    );
+                }
+
+                // Trigger background migration for historico
+                firestoreService.migrateHistoricoCabifyToCoopebombas(user.uid);
                 this.showApp();
             } else {
+                if (this.settingsUnsub) {
+                    this.settingsUnsub();
+                    this.settingsUnsub = null;
+                }
                 store.setState({ user: null });
                 this.showLogin();
             }
@@ -53,6 +83,10 @@ export const authModule = {
             if (activeJornadaUnsub) {
                 activeJornadaUnsub();
                 activeJornadaUnsub = null;
+            }
+            if (this.settingsUnsub) {
+                this.settingsUnsub();
+                this.settingsUnsub = null;
             }
             await auth.signOut();
             store.setState({

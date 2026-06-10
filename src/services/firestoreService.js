@@ -85,6 +85,24 @@ export const firestoreService = {
             });
     },
 
+    async getSettings(uid) {
+        const doc = await db.collection('users').doc(uid)
+            .collection('settings').doc('config').get();
+        return doc.exists ? doc.data() : null;
+    },
+
+    subscribeToSettings(uid, callback) {
+        return db.collection('users').doc(uid)
+            .collection('settings').doc('config')
+            .onSnapshot(doc => {
+                if (doc.exists) {
+                    callback(doc.data());
+                }
+            }, error => {
+                console.error("Error subscribing to settings:", error);
+            });
+    },
+
     // Listener original (metadatos de jornada)
     subscribeToJornada(uid, callback) {
         return db.collection('users').doc(uid)
@@ -118,5 +136,41 @@ export const firestoreService = {
                     updatedAt: data.updatedAt // Objeto Timestamp de Firestore
                 });
             });
+    },
+
+    async migrateHistoricoCabifyToCoopebombas(uid) {
+        try {
+            const snapshot = await db.collection('users').doc(uid).collection('historico').get();
+            const batch = db.batch();
+            let count = 0;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                let hasChanges = false;
+                
+                if (data.carrerasDesglose && Array.isArray(data.carrerasDesglose)) {
+                    const newDesglose = data.carrerasDesglose.map(c => {
+                        if (c.platform === 'cabify') {
+                            hasChanges = true;
+                            return { ...c, platform: 'coopebombas' };
+                        }
+                        return c;
+                    });
+                    
+                    if (hasChanges) {
+                        const docRef = db.collection('users').doc(uid).collection('historico').doc(doc.id);
+                        batch.update(docRef, { carrerasDesglose: newDesglose });
+                        count++;
+                    }
+                }
+            });
+
+            if (count > 0) {
+                await batch.commit();
+                console.log(`Migración en Firestore completada: ${count} documentos actualizados.`);
+            }
+        } catch (error) {
+            console.error('Error durante la migración del historial en Firestore:', error);
+        }
     }
 }

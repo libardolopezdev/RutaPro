@@ -49,6 +49,31 @@ class Store {
             }
             this._state.settings.plataformas = plats;
         }
+
+        // Migrar carreras activas
+        if (this._state.carreras) {
+            this._state.carreras = this._state.carreras.map(carrera => {
+                if (carrera.platform === 'cabify') {
+                    return { ...carrera, platform: 'coopebombas' };
+                }
+                return carrera;
+            });
+        }
+
+        // Migrar historial
+        if (this._state.historico) {
+            this._state.historico = this._state.historico.map(jornada => {
+                if (jornada.carrerasDesglose) {
+                    jornada.carrerasDesglose = jornada.carrerasDesglose.map(carrera => {
+                        if (carrera.platform === 'cabify') {
+                            return { ...carrera, platform: 'coopebombas' };
+                        }
+                        return carrera;
+                    });
+                }
+                return jornada;
+            });
+        }
     }
 
     getState() {
@@ -56,6 +81,31 @@ class Store {
     }
 
     setState(newStateChunk) {
+        // MIGRATION: Migrar carreras activas de Cabify a Coopebombas
+        if (newStateChunk.carreras) {
+            newStateChunk.carreras = newStateChunk.carreras.map(carrera => {
+                if (carrera.platform === 'cabify') {
+                    return { ...carrera, platform: 'coopebombas' };
+                }
+                return carrera;
+            });
+        }
+
+        // MIGRATION: Migrar historial
+        if (newStateChunk.historico) {
+            newStateChunk.historico = newStateChunk.historico.map(jornada => {
+                if (jornada.carrerasDesglose) {
+                    jornada.carrerasDesglose = jornada.carrerasDesglose.map(carrera => {
+                        if (carrera.platform === 'cabify') {
+                            return { ...carrera, platform: 'coopebombas' };
+                        }
+                        return carrera;
+                    });
+                }
+                return jornada;
+            });
+        }
+
         const nextSettings = {
             ...this._state.settings,
             ...(newStateChunk.settings || {})

@@ -1,4 +1,4 @@
-import { formatCurrency, normalizePlatform, renderAvatar } from '../utils/format.js';
+import { formatCurrency, normalizePlatform, renderAvatar, getContrastSafeColor } from '../utils/format.js';
 import { updateGreeting } from '../utils/greeting.js';
 const elements = {
     currentDate: document.getElementById('currentDate'),
@@ -245,12 +245,27 @@ export const renderer = {
             }
 
             // 3. Motivational Message Logic
+            const excedenteDom = document.getElementById('excedenteRow');
+
             if (porcentaje >= 100) {
-                elements.remainingDisplay.textContent = '¡Meta superada!';
+                elements.remainingDisplay.textContent = '¡Meta superada! 🏆';
                 elements.remainingDisplay.style.color = 'var(--gold)';
                 elements.remainingDisplay.style.fontSize = '14px';
                 elements.remainingDisplay.style.fontWeight = '800';
                 elements.remainingDisplay.style.letterSpacing = 'normal';
+
+                if (excedenteDom) {
+                    const excedente = totalNeto - meta;
+                    if (excedente > 0) {
+                        excedenteDom.style.display = 'flex';
+                        excedenteDom.innerHTML = `
+                            <span class="label-excedente">EXCEDENTE</span>
+                            <span class="valor-excedente">+ ${formatCurrency(excedente)}</span>
+                        `;
+                    } else {
+                        excedenteDom.style.display = 'none';
+                    }
+                }
                 
                 if (motivIconContainer) {
                     motivIconContainer.className = 'icon-box small gold';
@@ -258,6 +273,10 @@ export const renderer = {
                 }
                 if (motivIconSvg) motivIconSvg.innerHTML = '<path d="m20 8-8 5-8-5V6l8 5 8-5v2Z"/><path d="M4 10h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8Z"/><path d="M12 10v10"/><path d="m16 14-4 4-4-4"/>'; // Confetti/Party icon
             } else {
+                if (excedenteDom) {
+                    excedenteDom.style.display = 'none';
+                }
+
                 if (motivIconContainer) {
                     motivIconContainer.className = 'icon-box small';
                     motivIconContainer.style.color = 'var(--emerald)';
@@ -371,25 +390,30 @@ export const renderer = {
         // Ordenar por total descendente
         const sorted = Object.values(stats).sort((a, b) => b.total - a.total);
 
+        // Detectar tema activo para decisiones de contraste
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        const trackBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
+
         elements.plataformasStats.innerHTML = sorted.map((data) => {
             const norm = data.norm;
-            const statusLabel = norm.isActiva ? '' : '<span style="font-size: 8px; font-weight: normal; opacity: 0.5; margin-left: 4px;">• No activa</span>';
+            const statusLabel = norm.isActiva ? '' : '<span class="plat-not-active">• No activa</span>';
             const pct = totalGeneral > 0 ? Math.round((data.total / totalGeneral) * 100) : 0;
             const avatarHtml = renderAvatar(norm);
+            const colorSeguro = getContrastSafeColor(norm.color, isDark);
 
             return `
-                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+                <div class="platform-stat-row">
                     ${avatarHtml}
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 800;">
-                            <span>${norm.name}${statusLabel}</span>
-                            <span>${formatCurrency(data.total)}</span>
+                    <div class="platform-stat-content">
+                        <div class="platform-stat-header">
+                            <span class="platform-stat-name">${norm.name}${statusLabel}</span>
+                            <span class="platform-stat-val">${formatCurrency(data.total)}</span>
                         </div>
-                        <div style="width: 100%; background: var(--surface-glass); border-radius: 8px; height: 8px;">
-                            <div style="background: ${norm.color}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 10px ${norm.color}80; transition: width 1s var(--ease);"></div>
+                        <div class="platform-stat-track" style="background: ${trackBg};">
+                            <div style="background: ${norm.color}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 8px ${norm.color}60; transition: width 1s var(--ease);"></div>
                         </div>
                     </div>
-                    <div style="font-size: 12px; font-weight: 800; color: ${norm.color}; width: 36px; text-align: right;">
+                    <div class="platform-stat-pct" style="color: ${colorSeguro};">
                         ${pct}%
                     </div>
                 </div>
