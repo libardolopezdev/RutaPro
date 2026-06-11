@@ -3,7 +3,7 @@
  */
 import { store } from '../../state/store.js';
 import { showToast } from '../../utils/ui-utils.js';
-import { formatCurrency, getPlatformName, normalizePlatform, renderAvatar } from '../../utils/format.js';
+import { formatCurrency, getPlatformName, normalizePlatform, renderAvatarPlataforma } from '../../utils/format.js';
 import { firestoreService } from '../../services/firestoreService.js';
 
 // Persiste jornada activa (carreras + gastos) en Firestore para sincronización entre dispositivos.
@@ -341,7 +341,7 @@ export const carrerasModule = {
         }
     },
 
-    openRidesBottomSheet() {
+    async openRidesBottomSheet() {
         const state = store.getState();
         const sheet = document.getElementById('ridesBottomSheet');
         const overlay = document.getElementById('ridesBottomSheetOverlay');
@@ -357,11 +357,11 @@ export const carrerasModule = {
         } else {
             // Generar HTML de las carreras
             // Las ordenamos de más reciente a más antigua
-            const carrerasHTML = [...state.carreras].reverse().map(c => {
+            const carrerasHTML = await Promise.all([...state.carreras].reverse().map(async c => {
                 const plataforma = normalizePlatform(c.platform, state.settings.plataformas);
                 const name = plataforma.name;
                 const time = new Date(c.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                const avatarHtml = renderAvatar(plataforma);
+                const avatarHtml = await renderAvatarPlataforma(plataforma);
 
                 return `
                     <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative;">
@@ -380,15 +380,15 @@ export const carrerasModule = {
                             <button onclick="window.carrerasModule.toggleRideMenu(${c.id}, event)" style="background: none; border: none; color: var(--text-muted); font-size: 18px; padding: 4px; cursor: pointer;">⋮</button>
                             
                             <div class="ride-context-menu" id="ride-menu-${c.id}" style="display: none; position: absolute; right: 24px; top: 32px; background: #2A2A3E; border-radius: 12px; padding: 6px; border: 1px solid rgba(255,255,255,0.1); z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.4); min-width: 120px;">
-                                <div onclick="window.carrerasModule.editRide(${c.id})" style="padding: 10px 12px; font-size: 13px; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">✏️ Editar</div>
-                                <div onclick="window.carrerasModule.deleteRideConfirm(${c.id})" style="padding: 10px 12px; font-size: 13px; color: #FF5252; cursor: pointer; display: flex; align-items: center; gap: 8px;">🗑️ Eliminar</div>
+                                <div onclick="window.carrerasModule.editRide(${c.id})" style="padding: 10px 12px; font-size: 13px; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">&#9999; Editar</div>
+                                <div onclick="window.carrerasModule.deleteRideConfirm(${c.id})" style="padding: 10px 12px; font-size: 13px; color: #FF5252; cursor: pointer; display: flex; align-items: center; gap: 8px;">&#128465; Eliminar</div>
                             </div>
                         </div>
                     </div>
                 `;
-            }).join('');
+            }));
             
-            listContainer.innerHTML = carrerasHTML;
+            listContainer.innerHTML = carrerasHTML.join('');
         }
 
         overlay.style.display = 'block';

@@ -1,5 +1,30 @@
-import { formatCurrency, normalizePlatform, renderAvatar, getContrastSafeColor } from '../utils/format.js';
+import { formatCurrency, normalizePlatform, renderAvatarPlataforma, getContrastSafeColor, getColorOficial, normalizarNombre } from '../utils/format.js';
 import { updateGreeting } from '../utils/greeting.js';
+
+/**
+ * Prioridad de color para barras y porcentajes:
+ * 1. Color oficial del catálogo (máxima prioridad — anula cualquier color guardado por canvas)
+ * 2. Color configurado por el usuario (solo para plataformas custom no reconocidas)
+ * 3. Fallback verde
+ */
+function getColorBarra(norm, settingsPlatforms = []) {
+    // 1. Catálogo oficial — siempre gana para plataformas conocidas
+    const oficial = getColorOficial(norm.name);
+    if (oficial) return oficial;
+
+    // 2. Color del usuario — solo para plataformas custom
+    const activa = settingsPlatforms.find(p =>
+        p.id === norm.id ||
+        normalizarNombre(p.name) === normalizarNombre(norm.name)
+    );
+    if (activa?.color && activa.color !== '#00E676' && activa.color !== '#6B7280') {
+        return activa.color;
+    }
+
+    // 3. Fallback
+    if (norm.color && norm.color !== '#6B7280') return norm.color;
+    return '#6B7280';
+}
 const elements = {
     currentDate: document.getElementById('currentDate'),
     metaDisplay: document.getElementById('metaDisplay'),
@@ -374,7 +399,7 @@ export const renderer = {
         }
     },
 
-    updateSummary(state) {
+    async updateSummary(state) {
         if (!elements.plataformasStats) return;
         const stats = {};
         let totalGeneral = 0;
@@ -394,12 +419,13 @@ export const renderer = {
         const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
         const trackBg = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)';
 
-        elements.plataformasStats.innerHTML = sorted.map((data) => {
+        const rowsHtml = await Promise.all(sorted.map(async (data) => {
             const norm = data.norm;
             const statusLabel = norm.isActiva ? '' : '<span class="plat-not-active">• No activa</span>';
             const pct = totalGeneral > 0 ? Math.round((data.total / totalGeneral) * 100) : 0;
-            const avatarHtml = renderAvatar(norm);
-            const colorSeguro = getContrastSafeColor(norm.color, isDark);
+            const avatarHtml = await renderAvatarPlataforma(norm);
+            const colorBarra = getColorBarra(norm, state.settings.plataformas);
+            const colorSeguro = getContrastSafeColor(colorBarra, isDark);
 
             return `
                 <div class="platform-stat-row">
@@ -410,7 +436,7 @@ export const renderer = {
                             <span class="platform-stat-val">${formatCurrency(data.total)}</span>
                         </div>
                         <div class="platform-stat-track" style="background: ${trackBg};">
-                            <div style="background: ${norm.color}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 8px ${norm.color}60; transition: width 1s var(--ease);"></div>
+                            <div style="background: ${colorBarra}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 8px ${colorBarra}60; transition: width 1s var(--ease);"></div>
                         </div>
                     </div>
                     <div class="platform-stat-pct" style="color: ${colorSeguro};">
@@ -418,14 +444,15 @@ export const renderer = {
                     </div>
                 </div>
             `;
-        }).join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Sin datos aún</div>';
+        }));
+        elements.plataformasStats.innerHTML = rowsHtml.join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Sin datos aún</div>';
     },
 
-    updateCarrerasList(state) {
+    async updateCarrerasList(state) {
         if (!elements.carrerasList) return;
-        elements.carrerasList.innerHTML = state.carreras.slice(-5).reverse().map(c => {
+        const ridesHtml = await Promise.all(state.carreras.slice(-5).reverse().map(async c => {
             const norm = normalizePlatform(c.platform, state.settings.plataformas);
-            const avatarHtml = renderAvatar(norm);
+            const avatarHtml = await renderAvatarPlataforma(norm);
 
             return `
                 <div class="ride-item" style="display:flex; align-items:center; gap:12px;">
@@ -442,7 +469,8 @@ export const renderer = {
                     </div>
                 </div>
             `;
-        }).join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Añade tu primera carrera</div>';
+        }));
+        elements.carrerasList.innerHTML = ridesHtml.join('') || '<div style="text-align:center; color:var(--text-muted); font-size:12px;">Añade tu primera carrera</div>';
 
         // ✅ CORRECCIÓN: pasar state como parámetro en lugar de usar require()
         this.initSmartFAB(state);

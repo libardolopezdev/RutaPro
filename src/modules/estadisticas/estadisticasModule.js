@@ -4,7 +4,29 @@
 import { store } from '../../state/store.js';
 import { storageService } from '../../services/storageService.js';
 import { firestoreService } from '../../services/firestoreService.js';
-import { formatCurrency, getPlatformName, normalizePlatform, renderAvatar } from '../../utils/format.js';
+import { formatCurrency, getPlatformName, normalizePlatform, renderAvatarPlataforma, getColorOficial, getContrastSafeColor, normalizarNombre } from '../../utils/format.js';
+
+/**
+ * Prioridad de color para barras: catálogo oficial > color del usuario (custom) > fallback
+ */
+function getColorBarra(norm, settingsPlatforms = []) {
+    // 1. Catálogo oficial — siempre gana para plataformas conocidas
+    const oficial = getColorOficial(norm.name);
+    if (oficial) return oficial;
+
+    // 2. Color del usuario — solo para plataformas custom
+    const activa = settingsPlatforms.find(p =>
+        p.id === norm.id ||
+        normalizarNombre(p.name) === normalizarNombre(norm.name)
+    );
+    if (activa?.color && activa.color !== '#00E676' && activa.color !== '#6B7280') {
+        return activa.color;
+    }
+
+    // 3. Fallback
+    if (norm.color && norm.color !== '#6B7280') return norm.color;
+    return '#6B7280';
+}
 
 let gananciasChartInstance = null;
 let mediosPagoChartInstance = null;
@@ -136,7 +158,7 @@ export const estadisticasModule = {
         }
     },
 
-    renderPlatformRanking(data) {
+    async renderPlatformRanking(data) {
         const state = store.getState();
         const platStats = {};
         const uniquePlatforms = new Set();
@@ -181,18 +203,21 @@ export const estadisticasModule = {
             }
         });
 
-        document.getElementById('stPlatformRanking').innerHTML = sorted.map(([id, st]) => {
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        document.getElementById('stPlatformRanking').innerHTML = (await Promise.all(sorted.map(async ([id, st]) => {
             const prom = st.count > 0 ? (st.total / st.count) : 0;
             const pctFill = (st.total / maxMonto) * 100;
             const isBest = id === bestPromedioId;
             const normMinimal = { name: st.name.replace(' (Inactiva)', ''), color: st.color };
-            const avatarHtml = renderAvatar(normMinimal);
+            const avatarHtml = await renderAvatarPlataforma(normMinimal);
+            const colorBarra = getColorBarra({ id, name: normMinimal.name, color: st.color }, state.settings.plataformas);
+            const colorSeguro = getContrastSafeColor(colorBarra, isDark);
 
             return `
                 <div class="pr-item">
                     <div class="pr-header" style="display:flex; align-items:center; gap:8px;">
                         ${avatarHtml}
-                        <span class="pr-name" style="color:${st.color}">
+                        <span class="pr-name" style="color:${colorSeguro}">
                             ${st.name} 
                             ${isBest ? '<span class="pr-badge">⭐ Más rentable</span>' : ''}
                         </span>
@@ -203,11 +228,11 @@ export const estadisticasModule = {
                         <span>Prom: ${formatCurrency(prom)}/viaje</span>
                     </div>
                     <div class="pr-bar-bg">
-                        <div class="pr-bar-fill" style="width: ${pctFill}%; background: ${st.color}"></div>
+                        <div class="pr-bar-fill" style="width: ${pctFill}%; background: ${colorBarra}"></div>
                     </div>
                 </div>
             `;
-        }).join('');
+        }))).join('');
     },
 
     renderExpensesControl(data) {

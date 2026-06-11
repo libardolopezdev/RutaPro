@@ -119,56 +119,257 @@ export function getContrastSafeColor(hexColor, isDark) {
     return hexColor;
 }
 
-const PLATAFORMAS_SIN_LOGO = [
-  'mano', 'a mano', 'calle', 'tradicional',
-  'taxi tradicional', 'parada'
-];
+// ─────────────────────────────────────────────────────────────────────────────
+// SISTEMA DE LOGOS DE PLATAFORMAS
+// ─────────────────────────────────────────────────────────────────────────────
 
-export function getLogoUrl(nombrePlataforma) {
-    if (!nombrePlataforma) return null;
-    
-    const nombreLimpio = nombrePlataforma
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
+/** Mapeo de variantes de nombre → ID canónico */
+const ALIASES = {
+    // Uber
+    'uber': 'uber', 'uberx': 'uber', 'uber x': 'uber',
 
-    // Verificar primero si es plataforma sin logo
-    if (PLATAFORMAS_SIN_LOGO.some(p => nombreLimpio.includes(p))) {
-      return null; // No intentar cargar nada
+    // Didi
+    'didi': 'didi', 'di di': 'didi',
+
+    // Cabify
+    'cabify': 'cabify',
+
+    // InDriver
+    'indriver': 'indriver', 'in driver': 'indriver',
+    'indrive': 'indriver', 'in drive': 'indriver',
+
+    // Beat
+    'beat': 'beat',
+
+    // Rappi
+    'rappi': 'rappi', 'rapitaxi': 'rappi',
+
+    // Picap
+    'picap': 'picap', 'pi cap': 'picap',
+
+    // Coopebombas
+    'coopebombas': 'coopebombas',
+    'coope bombas': 'coopebombas',
+    'cooperativa bombas': 'coopebombas',
+    'tax coopebombas': 'coopebombas',
+
+    // Taxis Libres
+    'taxislibres': 'taxislibres',
+    'taxis libres': 'taxislibres',
+    'taxilibres': 'taxislibres',
+
+    // Sin logo — plataformas físicas/locales
+    'mano': 'SIN_LOGO',
+    'a mano': 'SIN_LOGO',
+    'amano': 'SIN_LOGO',
+    'calle': 'SIN_LOGO',
+    'en calle': 'SIN_LOGO',
+    'parada': 'SIN_LOGO',
+    'tradicional': 'SIN_LOGO',
+    'taxi tradicional': 'SIN_LOGO',
+    'taxitradicionl': 'SIN_LOGO',
+    'taxindividual': 'SIN_LOGO',
+    'tax individual': 'SIN_LOGO',
+    'taxsuper': 'SIN_LOGO',
+    'tax super': 'SIN_LOGO',
+    'taxpoblado': 'SIN_LOGO',
+    'tax poblado': 'SIN_LOGO',
+    'flotabernal': 'SIN_LOGO',
+    'flota bernal': 'SIN_LOGO',
+    'taxestadio': 'SIN_LOGO',
+    'tax estadio': 'SIN_LOGO',
+};
+
+/** Dominios oficiales verificados para favicon */
+const DOMINIOS_OFICIALES = {
+    'uber': 'uber.com',
+    'didi': 'didiglobal.com',
+    'cabify': 'cabify.com',
+    'indriver': 'indriver.com',
+    'beat': 'thebeat.co',
+    'rappi': 'rappi.com',
+    'picap': 'picap.co',
+    'coopebombas': 'coopebombas.com',
+    'taxislibres': 'taxislibres.com.co',
+};
+
+/** Colores oficiales de marca */
+const COLORES_OFICIALES = {
+    'uber': '#1A1A1A',
+    'didi': '#FF5C00',
+    'cabify': '#7C3AED',
+    'indriver': '#C0F11C',
+    'beat': '#00D4AA',
+    'rappi': '#FF441F',
+    'picap': '#00B0FF',
+    'coopebombas': '#00778C',
+    'taxislibres': '#FFD600',
+    'taxindividual': '#F59E0B',
+    'taxsuper': '#3B82F6',
+    'taxpoblado': '#10B981',
+    'flotabernal': '#EF4444',
+    'taxestadio': '#8B5CF6',
+};
+
+// ─── Normalización ────────────────────────────────────────────────────────────
+
+/**
+ * Normaliza un nombre de plataforma: minúsculas, sin tildes, sin emojis,
+ * sin caracteres especiales, espacios colapsados.
+ * @param {string} nombre
+ * @returns {string}
+ */
+export function normalizarNombre(nombre) {
+    if (!nombre || typeof nombre !== 'string') return '';
+    return nombre
+        .toLowerCase()
+        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+        .replace(/[\u2600-\u27BF]/g, '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+/**
+ * Resuelve el ID canónico de una plataforma a partir de su nombre.
+ * Devuelve 'SIN_LOGO', un ID oficial, o 'CUSTOM_<nombre>' para desconocidas.
+ * @param {string} nombrePlataforma
+ * @returns {string|null}
+ */
+export function resolverIdCanonico(nombrePlataforma) {
+    const normalizado = normalizarNombre(nombrePlataforma);
+    if (!normalizado) return null;
+
+    // 1. Match exacto en aliases
+    if (ALIASES[normalizado]) return ALIASES[normalizado];
+
+    // 2. Match sin espacios (ej: "taxislibres" vs "taxis libres")
+    const sinEspacios = normalizado.replace(/\s+/g, '');
+    if (ALIASES[sinEspacios]) return ALIASES[sinEspacios];
+
+    // 3. Match parcial
+    for (const [alias, id] of Object.entries(ALIASES)) {
+        if (normalizado.includes(alias) || alias.includes(normalizado)) {
+            return id;
+        }
     }
 
-    const nombre = nombreLimpio.replace(/\s+/g, "");
-    
-    return `https://www.google.com/s2/favicons?domain=${nombre}.com&sz=64`;
+    // 4. Plataforma personalizada no reconocida
+    return 'CUSTOM_' + sinEspacios;
 }
-  
-export function renderAvatar(plataforma) {
-    const logoUrl = getLogoUrl(plataforma.name);
-    const iniciales = plataforma.name.substring(0, 2).toUpperCase();
+
+// ─── Caché + carga asíncrona ──────────────────────────────────────────────────
+
+const _logoCache = new Map();
+
+/**
+ * Devuelve la URL del favicon de la plataforma, o null si no existe / no aplica.
+ * Resultado cacheado en memoria durante la sesión.
+ * @param {string} nombrePlataforma
+ * @returns {Promise<string|null>}
+ */
+export async function getLogoUrlCached(nombrePlataforma) {
+    const key = normalizarNombre(nombrePlataforma);
+    if (!key) return null;
+
+    if (_logoCache.has(key)) return _logoCache.get(key);
+
+    const idCanonico = resolverIdCanonico(nombrePlataforma);
+
+    // Plataformas físicas sin logo digital
+    if (idCanonico === 'SIN_LOGO') {
+        _logoCache.set(key, null);
+        return null;
+    }
+
+    let url;
+    if (idCanonico && DOMINIOS_OFICIALES[idCanonico]) {
+        url = `https://www.google.com/s2/favicons?domain=${DOMINIOS_OFICIALES[idCanonico]}&sz=64`;
+    } else {
+        const nombreLimpio = normalizarNombre(nombrePlataforma).replace(/\s+/g, '');
+        if (!nombreLimpio) {
+            _logoCache.set(key, null);
+            return null;
+        }
+        url = `https://www.google.com/s2/favicons?domain=${nombreLimpio}.com&sz=64`;
+    }
+
+    // Verificar que la imagen cargue y no sea el favicon genérico 16×16 de Google
+    const resultado = await new Promise((resolve) => {
+        const img = new Image();
+        const timeout = setTimeout(() => resolve(null), 3000);
+        img.onload = () => {
+            clearTimeout(timeout);
+            if (img.naturalWidth <= 16 && img.naturalHeight <= 16) {
+                resolve(null); // favicon genérico = sin logo real
+            } else {
+                resolve(url);
+            }
+        };
+        img.onerror = () => {
+            clearTimeout(timeout);
+            resolve(null);
+        };
+        img.src = url;
+    });
+
+    _logoCache.set(key, resultado);
+    return resultado;
+}
+
+/**
+ * Devuelve el color oficial de la plataforma, o null si es desconocida / sin logo.
+ * @param {string} nombrePlataforma
+ * @returns {string|null}
+ */
+export function getColorOficial(nombrePlataforma) {
+    const idCanonico = resolverIdCanonico(nombrePlataforma);
+    if (!idCanonico || idCanonico === 'SIN_LOGO') return null;
+    const id = idCanonico.replace('CUSTOM_', '');
+    return COLORES_OFICIALES[id] || null;
+}
+
+/**
+ * Renderiza el avatar de una plataforma: favicon si está disponible,
+ * iniciales con color de marca como fallback.
+ * Es la ÚNICA función que debe usarse para avatares en todo el proyecto.
+ * @param {{ name: string, color?: string }} plataforma
+ * @param {number} [size=40]
+ * @returns {Promise<string>} HTML string
+ */
+export async function renderAvatarPlataforma(plataforma, size = 40) {
+    const logoUrl = await getLogoUrlCached(plataforma.name);
+    const iniciales = (normalizarNombre(plataforma.name).substring(0, 2).toUpperCase()) || '??';
+    const color = plataforma.color || getColorOficial(plataforma.name) || '#6B7280';
+    const radius = Math.round(size * 0.25);
+
+    const estiloBase = `width:${size}px;height:${size}px;border-radius:${radius}px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:1px solid ${color}30;background:${color}15;`;
 
     if (!logoUrl) {
         return `
-          <div class="avatar-container" style="position: relative; width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: ${plataforma.color}20; border: 1px solid ${plataforma.color}40; display: flex; align-items: center; justify-content: center;">
-            <div class="avatar-fallback" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: ${plataforma.color}20;">
-              <span style="color: ${plataforma.color}; font-weight: 900; font-size: 11px;">${iniciales}</span>
-            </div>
-          </div>
-        `;
+            <div style="${estiloBase}">
+                <span style="font-size:${Math.round(size * 0.35)}px;font-weight:700;color:${color};line-height:1;user-select:none;">${iniciales}</span>
+            </div>`;
     }
 
     return `
-      <div class="avatar-container" style="position: relative; width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; overflow: hidden; background: ${plataforma.color}15; border: 1px solid ${plataforma.color}30; display: flex; align-items: center; justify-content: center;">
-        <img 
-          src="${logoUrl}" 
-          alt="${plataforma.name}"
-          class="logo-img"
-          style="width: 100%; height: 100%; object-fit: contain; display: block; padding: 4px;"
-          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
-        />
-        <div class="avatar-fallback" style="display:none; width: 100%; height: 100%; align-items: center; justify-content: center; background: ${plataforma.color}20;">
-          <span style="color: ${plataforma.color}; font-weight: 900; font-size: 11px;">${iniciales}</span>
-        </div>
-      </div>
-    `;
+        <div style="${estiloBase}position:relative;">
+            <img src="${logoUrl}"
+                alt="${plataforma.name}"
+                style="width:${Math.round(size * 0.7)}px;height:${Math.round(size * 0.7)}px;object-fit:contain;"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+            />
+            <div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;">
+                <span style="font-size:${Math.round(size * 0.35)}px;font-weight:700;color:${color};">${iniciales}</span>
+            </div>
+        </div>`;
+}
+
+/**
+ * Limpia el caché de logos. Llamar al hacer logout.
+ */
+export function limpiarCacheLogo() {
+    _logoCache.clear();
 }

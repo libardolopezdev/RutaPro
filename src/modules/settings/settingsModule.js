@@ -4,7 +4,7 @@
 import { store } from '../../state/store.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { showToast } from '../../utils/ui-utils.js';
-import { renderAvatar } from '../../utils/format.js';
+import { renderAvatarPlataforma } from '../../utils/format.js';
 
 export const settingsModule = {
     open() {
@@ -46,21 +46,22 @@ export const settingsModule = {
         showToast('Configuración guardada', 'success');
     },
 
-    renderPlatformManager(plataformas) {
+    async renderPlatformManager(plataformas) {
         const container = document.getElementById('platformManagerList');
         if (!container) return;
 
-        container.innerHTML = plataformas.map(plat => {
-            const avatarHtml = renderAvatar(plat);
+        const items = await Promise.all(plataformas.map(async plat => {
+            const avatarHtml = await renderAvatarPlataforma(plat);
             return `
             <div class="glass-card" style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 10px; border-radius: 16px; background: rgba(255,255,255,0.02);">
                 ${avatarHtml}
                 <span style="flex: 1; font-size: 13px; font-weight: 700;">${plat.name}</span>
-                <button class="edit-platform-btn" data-id="${plat.id}" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:5px;">✎</button>
+                <button class="edit-platform-btn" data-id="${plat.id}" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:5px;">&#9999;</button>
                 <button class="remove-platform-btn" data-id="${plat.id}" style="background:none; border:none; color:var(--ruby); cursor:pointer; padding:5px; font-size:18px;">×</button>
             </div>
             `;
-        }).join('') || '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px;">Sin plataformas.</p>';
+        }));
+        container.innerHTML = items.join('') || '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px;">Sin plataformas.</p>';
     },
 
     async addPlatform(name, color) {
