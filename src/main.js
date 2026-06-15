@@ -8,6 +8,7 @@ import { store } from './state/store.js';
 import { storageService } from './services/storageService.js';
 import { renderer } from './ui/renderer.js';
 import { authModule } from './modules/auth/authModule.js';
+import { onboardingModule } from './modules/onboarding/onboardingModule.js';
 import { carrerasModule } from './modules/carreras/carrerasModule.js';
 import { gastosModule } from './modules/gastos/gastosModule.js';
 import { historicoModule } from './modules/historico/historicoModule.js';
@@ -20,8 +21,6 @@ window.historicoModule = historicoModule;
 window.carrerasModule = carrerasModule;
 
 async function initApp() {
-    console.log('RutaPro V3: Powering Up...');
-
     const localState = storageService.loadState();
     if (localState) store.setState(localState);
 
@@ -50,8 +49,12 @@ async function initApp() {
         _lastPct = pct;
     });
 
+    // Initialize modules
     authModule.init();
     notificationsModule.init();
+    
+    // Make onboardingModule globally accessible so authModule can initialize it
+    window.onboardingModule = onboardingModule;
 
     // ── Cargar Tema Persistente ──
     const savedTheme = localStorage.getItem('rutapro_theme') || 'dark';
@@ -235,7 +238,11 @@ function setupEventListeners() {
     bind('addCarrera', 'click', () => {
         const input = document.getElementById('amountInput');
         const amount = parseFloat(input.value.replace(/\D/g, ''));
-        if (amount) {
+        if (amount && amount > 0) {
+            if (amount > 5000000) {
+                alert('El monto excede el límite permitido por viaje.');
+                return;
+            }
             const prevCount = store.getState().carreras.length;
             carrerasModule.addCarrera(amount);
             input.value = '';
@@ -256,7 +263,11 @@ function setupEventListeners() {
     bind('agregarGasto', 'click', () => {
         const monto = parseFloat(document.getElementById('gastoMonto').value.replace(/\D/g, ''));
         const tipo = document.getElementById('gastoTipo').value;
-        if (monto && tipo) {
+        if (monto && monto > 0 && tipo) {
+            if (monto > 5000000) {
+                alert('El monto del gasto excede el límite permitido.');
+                return;
+            }
             gastosModule.addGasto(monto, tipo);
             document.getElementById('gastoMonto').value = '';
             document.getElementById('gastoTipo').value = '';
@@ -476,28 +487,92 @@ function setupEventListeners() {
     bind('exportReportBtn', 'click', () => carrerasModule.exportReport());
 
     // ── Auth bridges ──
-    window.handleLogin = () => {
-        const e = document.getElementById('loginEmail').value;
+    bind('btnLogin', 'click', () => {
+        const e = document.getElementById('loginEmail').value.trim();
         const p = document.getElementById('loginPassword').value;
+        if (!e) return authModule.showError('Ingresa tu correo');
+        if (!p) return authModule.showError('Ingresa tu contraseña');
         authModule.login(e, p);
-    };
-    window.handleRegister = () => {
-        const e = document.getElementById('loginEmail').value;
+    });
+
+    bind('btnRegister', 'click', () => {
+        const n = document.getElementById('regName').value.trim();
+        const e = document.getElementById('loginEmail').value.trim();
         const p = document.getElementById('loginPassword').value;
-        authModule.register(e, p);
-    };
-    window.handleGoogleLogin = () => authModule.loginWithGoogle();
-    window.toggleAuthMode = () => {
+        const cp = document.getElementById('regConfirmPassword').value;
+
+        if (!n) return authModule.showError('Por favor, indica tu nombre.');
+        if (!e) return authModule.showError('Por favor, indica tu correo.');
+        
+        // Basic email regex validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(e)) {
+            return authModule.showError('Por favor, ingresa un formato de correo electrónico válido.');
+        }
+
+        if (!p || p.length < 6) return authModule.showError('Por seguridad, la contraseña debe tener mínimo 6 caracteres.');
+        if (p !== cp) return authModule.showError('Las contraseñas no coinciden. Intenta escribirlas de nuevo.');
+
+        authModule.register(n, e, p);
+    });
+
+    bind('btnGoogleLogin', 'click', () => authModule.loginWithGoogle());
+    
+    bind('btnForgotPassword', 'click', () => {
+        const e = document.getElementById('loginEmail').value.trim();
+        if (!e) return authModule.showError('Por favor, ingresa tu correo electrónico para restablecer tu contraseña.');
+        authModule.sendPasswordReset(e);
+    });
+    
+    bind('btnGoToEmailAuth', 'click', () => {
+        document.getElementById('landingScreen').style.display = 'none';
+        document.getElementById('emailAuthScreen').style.display = 'flex';
         const lb = document.getElementById('btnLogin');
         const rb = document.getElementById('btnRegister');
-        const sub = document.getElementById('authSubtitle');
+        if (lb) lb.style.display = 'block';
+        if (rb) rb.style.display = 'none';
+        const title = document.getElementById('authTitle');
+        if (title) title.textContent = 'Iniciar Sesión';
+        const toggle = document.getElementById('toggleAuthMode');
+        if (toggle) toggle.textContent = '¿No tienes cuenta? Regístrate';
+        const r1 = document.getElementById('registerFields');
+        const r2 = document.getElementById('registerFields2');
+        if (r1) r1.style.display = 'none';
+        if (r2) r2.style.display = 'none';
+        const forgotWrap = document.getElementById('forgotPasswordWrap');
+        if (forgotWrap) forgotWrap.style.display = 'block';
+    });
+
+    bind('btnGoToLanding', 'click', () => {
+        document.getElementById('emailAuthScreen').style.display = 'none';
+        document.getElementById('landingScreen').style.display = 'flex';
+    });
+
+    bind('toggleAuthMode', 'click', () => {
+        const lb = document.getElementById('btnLogin');
+        const rb = document.getElementById('btnRegister');
+        const r1 = document.getElementById('registerFields');
+        const r2 = document.getElementById('registerFields2');
+        const title = document.getElementById('authTitle');
         const link = document.getElementById('toggleAuthMode');
-        const isLogin = lb.style.display !== 'none';
-        lb.style.display = isLogin ? 'none' : 'block';
-        rb.style.display = isLogin ? 'block' : 'none';
-        sub.textContent = isLogin ? 'Crea tu nueva cuenta' : 'Identifícate para continuar';
-        link.textContent = isLogin ? '¿Ya tienes cuenta? Entra' : '¿No tienes cuenta? Regístrate';
-    };
+        
+        const forgotWrap = document.getElementById('forgotPasswordWrap');
+        
+        const isLogin = lb && lb.style.display !== 'none';
+        
+        if (lb) lb.style.display = isLogin ? 'none' : 'block';
+        if (rb) rb.style.display = isLogin ? 'block' : 'none';
+        
+        if (r1) r1.style.display = isLogin ? 'block' : 'none';
+        if (r2) r2.style.display = isLogin ? 'block' : 'none';
+        if (forgotWrap) forgotWrap.style.display = isLogin ? 'none' : 'block';
+        
+        if (title) title.textContent = isLogin ? 'Crear Cuenta' : 'Iniciar Sesión';
+        if (link) link.textContent = isLogin ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate';
+        
+        // Clear error when toggling
+        authModule.showError('');
+    });
 }
 
 // ── Helpers Modal Jornada Activa ──────────────────────────────────────────────

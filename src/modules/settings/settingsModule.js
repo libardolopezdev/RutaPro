@@ -4,7 +4,7 @@
 import { store } from '../../state/store.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { showToast } from '../../utils/ui-utils.js';
-import { renderAvatarPlataforma } from '../../utils/format.js';
+import { renderAvatarPlataforma, escapeHTML } from '../../utils/format.js';
 
 export const settingsModule = {
     open() {
@@ -55,7 +55,7 @@ export const settingsModule = {
             return `
             <div class="glass-card" style="display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 10px; border-radius: 16px; background: rgba(255,255,255,0.02);">
                 ${avatarHtml}
-                <span style="flex: 1; font-size: 13px; font-weight: 700;">${plat.name}</span>
+                <span style="flex: 1; font-size: 13px; font-weight: 700;">${escapeHTML(plat.name)}</span>
                 <button class="edit-platform-btn" data-id="${plat.id}" style="background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:5px;">&#9999;</button>
                 <button class="remove-platform-btn" data-id="${plat.id}" style="background:none; border:none; color:var(--ruby); cursor:pointer; padding:5px; font-size:18px;">×</button>
             </div>
@@ -117,6 +117,12 @@ export const settingsModule = {
     async removePlatform(id) {
         if (!confirm('¿Eliminar esta plataforma?')) return;
         const state = store.getState();
+        
+        if (state.settings.plataformas && state.settings.plataformas.length <= 1) {
+            showToast('Debes tener al menos una plataforma activa', 'warning');
+            return;
+        }
+
         const newPlataformas = (state.settings.plataformas || []).filter(p => p.id !== id);
         const newSettings = { ...state.settings, plataformas: newPlataformas };
 

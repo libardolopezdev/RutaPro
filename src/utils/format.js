@@ -10,6 +10,16 @@ export function formatCurrency(amount) {
     }).format(amount);
 }
 
+export function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 const platformCache = new Map();
 
 function extraerIdBase(id) {
@@ -41,7 +51,7 @@ export function normalizePlatform(platformId, settingsPlatforms = []) {
         'mano': { name: 'MANO', color: '#7C3AED' },
         'cabify': { name: 'CABIFY', color: '#7C3AED' },
         'coop': { name: 'COOPEBOMBAS', color: '#1976D2' },
-        'uber': { name: 'UBER', color: '#1A1A1A' },
+        'uber': { name: 'UBER', color: '#FFFFFF' },
         'didi': { name: 'DIDI', color: '#FF4700' },
         'idriver': { name: 'INDRIVER', color: '#C0F11C' },
     };
@@ -88,36 +98,7 @@ export function getPlatformName(platformId, plataformas = []) {
     return norm.isActiva ? norm.name : `${norm.name} • No activa`;
 }
 
-/**
- * Garantiza contraste mínimo para colores de plataforma según el tema activo.
- * @param {string} hexColor - Color hexadecimal ej. '#000000'
- * @param {boolean} isDark - true si el tema activo es oscuro
- */
-export function getContrastSafeColor(hexColor, isDark) {
-    if (!hexColor || hexColor.length < 7) return isDark ? '#9CA3AF' : '#374151';
-    try {
-        const r = parseInt(hexColor.slice(1, 3), 16);
-        const g = parseInt(hexColor.slice(3, 5), 16);
-        const b = parseInt(hexColor.slice(5, 7), 16);
-        const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        
-        if (isDark && luminancia < 0.25) {
-            return '#9CA3AF'; // Color muy oscuro en fondo oscuro -> gris claro
-        }
-        
-        if (!isDark && luminancia > 0.35) {
-            // Oscurecer proporcionalmente para mantener el tono en fondo claro
-            const factor = 0.35 / luminancia;
-            const nr = Math.floor(r * factor).toString(16).padStart(2, '0');
-            const ng = Math.floor(g * factor).toString(16).padStart(2, '0');
-            const nb = Math.floor(b * factor).toString(16).padStart(2, '0');
-            return `#${nr}${ng}${nb}`;
-        }
-    } catch (_) {
-        return isDark ? '#9CA3AF' : '#374151';
-    }
-    return hexColor;
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SISTEMA DE LOGOS DE PLATAFORMAS
@@ -168,6 +149,10 @@ const ALIASES = {
     'tradicional': 'SIN_LOGO',
     'taxi tradicional': 'SIN_LOGO',
     'taxitradicionl': 'SIN_LOGO',
+    'taxi': 'SIN_LOGO',
+    'taxista': 'SIN_LOGO',
+    'servicio': 'SIN_LOGO',
+    'particular': 'SIN_LOGO',
     'taxindividual': 'SIN_LOGO',
     'tax individual': 'SIN_LOGO',
     'taxsuper': 'SIN_LOGO',
@@ -193,9 +178,11 @@ const DOMINIOS_OFICIALES = {
     'taxislibres': 'taxislibres.com.co',
 };
 
-/** Colores oficiales de marca */
-const COLORES_OFICIALES = {
-    'uber': '#1A1A1A',
+export function getColorPlataforma(nombrePlataforma, fallback = '#6B7280') {
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  
+  const COLORES = {
+    'uber': isDark ? '#E5E7EB' : '#1A1A1A',
     'didi': '#FF5C00',
     'cabify': '#7C3AED',
     'indriver': '#C0F11C',
@@ -209,7 +196,11 @@ const COLORES_OFICIALES = {
     'taxpoblado': '#10B981',
     'flotabernal': '#EF4444',
     'taxestadio': '#8B5CF6',
-};
+  };
+
+  const nombreLimpio = normalizarNombre(nombrePlataforma);
+  return COLORES[nombreLimpio] || fallback;
+}
 
 // ─── Normalización ────────────────────────────────────────────────────────────
 
@@ -328,7 +319,7 @@ export function getColorOficial(nombrePlataforma) {
     const idCanonico = resolverIdCanonico(nombrePlataforma);
     if (!idCanonico || idCanonico === 'SIN_LOGO') return null;
     const id = idCanonico.replace('CUSTOM_', '');
-    return COLORES_OFICIALES[id] || null;
+    return getColorPlataforma(id, null);
 }
 
 /**

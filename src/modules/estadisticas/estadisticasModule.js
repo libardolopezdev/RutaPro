@@ -4,7 +4,7 @@
 import { store } from '../../state/store.js';
 import { storageService } from '../../services/storageService.js';
 import { firestoreService } from '../../services/firestoreService.js';
-import { formatCurrency, getPlatformName, normalizePlatform, renderAvatarPlataforma, getColorOficial, getContrastSafeColor, normalizarNombre } from '../../utils/format.js';
+import { formatCurrency, getPlatformName, normalizePlatform, renderAvatarPlataforma, getColorOficial, getColorPlataforma, normalizarNombre, escapeHTML } from '../../utils/format.js';
 
 /**
  * Prioridad de color para barras: catálogo oficial > color del usuario (custom) > fallback
@@ -184,8 +184,6 @@ export const estadisticasModule = {
             });
         });
         
-        console.log('Plataformas únicas registradas en el historial:', Array.from(uniquePlatforms));
-
         const sorted = Object.entries(platStats).sort((a, b) => b[1].total - a[1].total);
         if (sorted.length === 0) {
             document.getElementById('stPlatformRanking').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Sin datos de plataforma</div>';
@@ -211,14 +209,14 @@ export const estadisticasModule = {
             const normMinimal = { name: st.name.replace(' (Inactiva)', ''), color: st.color };
             const avatarHtml = await renderAvatarPlataforma(normMinimal);
             const colorBarra = getColorBarra({ id, name: normMinimal.name, color: st.color }, state.settings.plataformas);
-            const colorSeguro = getContrastSafeColor(colorBarra, isDark);
+            const colorSeguro = getColorPlataforma(normMinimal.name, colorBarra);
 
             return `
                 <div class="pr-item">
                     <div class="pr-header" style="display:flex; align-items:center; gap:8px;">
                         ${avatarHtml}
                         <span class="pr-name" style="color:${colorSeguro}">
-                            ${st.name} 
+                            ${escapeHTML(st.name)} 
                             ${isBest ? '<span class="pr-badge">⭐ Más rentable</span>' : ''}
                         </span>
                         <span class="pr-amount" style="margin-left:auto;">${formatCurrency(st.total)}</span>
@@ -274,7 +272,7 @@ export const estadisticasModule = {
                     <div class="eb-icon">${icon}</div>
                     <div class="eb-details">
                         <div class="eb-top">
-                            <span>${name}</span>
+                            <span>${escapeHTML(name)}</span>
                             <span style="font-family:'JetBrains Mono';">${formatCurrency(val)}</span>
                         </div>
                         <div class="eb-bar-bg">

@@ -1,6 +1,6 @@
 /* ============================================================
-   RutaPro V3 · Ultra-Premium "Obsidian & Emerald"
-   Luxurious Glassmorphism · High-Fidelity UI
+   RutaPro V3 Â· Ultra-Premium "Obsidian & Emerald"
+   Luxurious Glassmorphism Â· High-Fidelity UI
    @author Libardo Lopez
    ============================================================ */
 
@@ -84,7 +84,7 @@
 }
 
 /* ============================================================
-   LIGHT MODE — FULL REDESIGN (Minimal Clean)
+   LIGHT MODE â€” FULL REDESIGN (Minimal Clean)
    ============================================================ */
 
 [data-theme="light"] body {
@@ -203,7 +203,7 @@
     color: #0D1117 !important;
 }
 [data-theme="light"] .platform-stat-pct {
-    /* color is set inline via getContrastSafeColor — no override needed */
+    /* color is set inline via getContrastSafeColor â€” no override needed */
 }
 
 /* Platform buttons */
@@ -295,7 +295,7 @@
     scrollbar-width: thin; /* Firefox */
 }
 
-/* Ocultar scrollbar — Chrome/Safari */
+/* Ocultar scrollbar â€” Chrome/Safari */
 ::-webkit-scrollbar {
     width: 0px;
     background: transparent;
@@ -1033,7 +1033,7 @@ h3 {
 }
 
 /* ============================================================
-   MEJORA 5 — Banner de Jornada Sticky
+   MEJORA 5 â€” Banner de Jornada Sticky
    ============================================================ */
 
 .jornada-sticky-wrapper {
@@ -1049,11 +1049,11 @@ h3 {
 /* La tarjeta dentro del sticky mantiene sus estilos base */
 .jornada-sticky-wrapper .glass-card {
     margin-bottom: 0;
-    /* Borde más notable cuando la jornada está activa (se añade via JS) */
+    /* Borde mÃ¡s notable cuando la jornada estÃ¡ activa (se aÃ±ade via JS) */
 }
 
 /* ============================================================
-   MEJORA 4 — Reportes: fila top resaltada
+   MEJORA 4 â€” Reportes: fila top resaltada
    ============================================================ */
 
 .historico-item--top {
@@ -1076,7 +1076,7 @@ h3 {
     padding: 3px 10px;
 }
 
-/* FAB - Bot�n Flotante Inteligente */
+/* FAB - Botï¿½n Flotante Inteligente */
 .fab-btn {
     position: fixed;
     bottom: 110px;
@@ -1172,7 +1172,7 @@ h3 {
 }
 
 /* ============================================================
-   NUEVOS COMPONENTES — Modularización UI
+   NUEVOS COMPONENTES â€” ModularizaciÃ³n UI
    ============================================================ */
 
 /* Stats Row */
@@ -1265,7 +1265,7 @@ h3 {
 }
 
 /* ============================================================
-   CAMBIO 1 — PANEL DE NOTIFICACIONES
+   CAMBIO 1 â€” PANEL DE NOTIFICACIONES
    ============================================================ */
 
 .notif-overlay {
@@ -1299,7 +1299,7 @@ h3 {
     box-shadow: -20px 0 60px rgba(0, 0, 0, 0.7);
 }
 
-/* Modo claro — sombra más suave */
+/* Modo claro â€” sombra mÃ¡s suave */
 [data-theme="light"] .notif-panel {
     background: #FFFFFF;
     border-left: 1px solid rgba(0,0,0,0.08);
@@ -1374,7 +1374,7 @@ h3 {
 }
 
 /* ============================================================
-   CAMBIO 2 — MODAL JORNADA ACTIVA (LOVABLE REPLICA)
+   CAMBIO 2 â€” MODAL JORNADA ACTIVA (LOVABLE REPLICA)
    ============================================================ */
 
 .jornada-modal-overlay {
@@ -1585,7 +1585,7 @@ h3 {
 }
 
 /* ============================================================
-   CAMBIO 3 — MICRO-ANIMACIONES & HAPTICS CSS
+   CAMBIO 3 â€” MICRO-ANIMACIONES & HAPTICS CSS
    ============================================================ */
 
 @keyframes springPop {
@@ -2497,4 +2497,72 @@ h3 {
   font-size: 20px;
   font-weight: 700;
   color: #FFD600;
+}
+
+/* ONBOARDING STYLES */
+.onb-option {
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s var(--ease);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+.onb-option:hover {
+    background: rgba(255,255,255,0.05);
+}
+.onb-option.active {
+    background: rgba(0, 230, 118, 0.1);
+    border-color: var(--emerald);
+    color: var(--emerald);
+}
+.onb-option.active::after {
+    content: '✓';
+    color: var(--emerald);
+    font-weight: 900;
+}
+
+/* LANDING STYLES */
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100dvh;
+  padding: 48px 24px 40px;
+}
+
+.landing-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+}
+
+.landing-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-email-login {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: transparent;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-email-login:active {
+  background: rgba(255,255,255,0.05);
 }

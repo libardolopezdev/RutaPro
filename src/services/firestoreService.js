@@ -6,6 +6,26 @@
 import { db } from './firebase-init.js';
 
 export const firestoreService = {
+    async createInitialProfile(uid, data) {
+        const batch = db.batch();
+        const userRef = db.collection('users').doc(uid);
+        
+        batch.set(userRef, { 
+            profile: data.profile,
+            analytics: data.analytics
+        });
+        
+        const settingsRef = userRef.collection('settings').doc('config');
+        batch.set(settingsRef, data.settings);
+        
+        return batch.commit();
+    },
+
+    async checkUserProfile(uid) {
+        const doc = await db.collection('users').doc(uid).get();
+        return doc.exists ? doc.data() : null;
+    },
+
     async saveJornada(uid, data) {
         return db.collection('users').doc(uid)
             .collection('jornada_activa').doc('data')
@@ -74,6 +94,29 @@ export const firestoreService = {
     async clearJornada(uid) {
         return db.collection('users').doc(uid)
             .collection('jornada_activa').doc('data').delete();
+    },
+
+    async cerrarJornadaTransaccional(uid, jornadaData) {
+        const batch = db.batch();
+        
+        const historicoRef = db.collection('users').doc(uid)
+            .collection('historico').doc();
+        batch.set(historicoRef, {
+            ...jornadaData,
+            createdAt: window.firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        const jornadaRef = db.collection('users').doc(uid)
+            .collection('jornada_activa').doc('data');
+        batch.set(jornadaRef, {
+            jornadaIniciada: false,
+            carreras: [],
+            gastos: [],
+            jornadaInicio: null,
+            updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        return batch.commit();
     },
 
     async saveSettings(uid, settings) {
@@ -167,7 +210,6 @@ export const firestoreService = {
 
             if (count > 0) {
                 await batch.commit();
-                console.log(`Migración en Firestore completada: ${count} documentos actualizados.`);
             }
         } catch (error) {
             console.error('Error durante la migración del historial en Firestore:', error);

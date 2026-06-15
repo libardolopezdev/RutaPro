@@ -2,6 +2,7 @@
  * src/state/store.js
  * Gestión de estado centralizado y reactivo.
  */
+import { storageService } from '../services/storageService.js';
 
 const DEFAULT_PLATFORMS = [
     { id: 'uber', name: 'UBER', color: '#059669' },
@@ -135,6 +136,27 @@ class Store {
     _notify() {
         const currentState = this.getState();
         this._listeners.forEach(callback => callback(currentState));
+    }
+
+    clear() {
+        storageService.clear();
+        this._state = {
+            jornadaIniciada: false,
+            jornadaInicio: null,
+            carreras: [],
+            gastos: [],
+            selectedPlatform: null,
+            selectedPayment: null,
+            baseEfectivo: 0,
+            settings: {
+                meta: 270000,
+                storageType: 'local',
+                plataformas: [...DEFAULT_PLATFORMS]
+            },
+            user: null,
+            isOnline: navigator.onLine
+        };
+        this._notify();
     }
 }
 

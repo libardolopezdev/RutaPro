@@ -105,9 +105,8 @@ export const carrerasModule = {
         };
 
         if (state.user) {
-            // Guardar en histórico Y borrar la jornada activa de Firestore
-            await firestoreService.addToHistorico(state.user.uid, jornadaData);
-            await firestoreService.clearJornada(state.user.uid);
+            // Guardar en histórico Y borrar la jornada activa de Firestore de forma atómica
+            await firestoreService.cerrarJornadaTransaccional(state.user.uid, jornadaData);
         }
 
         store.setState({
@@ -130,15 +129,6 @@ export const carrerasModule = {
         const totalGastos = state.gastos.reduce((sum, g) => sum + g.monto, 0);
         const totalNeto = (state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0)) - totalGastos;
 
-        // Mejora 3: calcular efectivo y digital por separado
-        let efectivo = 0;
-        let digital = 0;
-        state.carreras.forEach(c => {
-            if (c.payment === 'efectivo') efectivo += (c.neto || c.amount);
-            else digital += (c.neto || c.amount);
-        });
-        const efectivoReal = efectivo - totalGastos;
-
         let report = `🚗 *RUTAPRO — REPORTE DE JORNADA*\n`;
         report += `📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
         report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
@@ -146,29 +136,55 @@ export const carrerasModule = {
         report += `💵 Total Bruto: ${formatCurrency(totalBruto)}\n`;
         report += `📉 Gastos: ${formatCurrency(totalGastos)}\n`;
         report += `💰 *Neto Total: ${formatCurrency(totalNeto)}*\n`;
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `💵 Efectivo (después gastos): ${formatCurrency(efectivoReal)}\n`;
-        report += `💳 Digital: ${formatCurrency(digital)}\n`;
+
+        // Cambio 1 — Meta y diferencia
+        const meta = state.settings.meta || 0;
+        const diferencia = totalNeto - meta;
+        if (meta > 0) {
+            if (diferencia > 0) {
+                report += `🏆 *Meta superada: + ${formatCurrency(diferencia)}*\n`;
+                report += `🎯 Meta del día: ${formatCurrency(meta)}\n`;
+            } else {
+                report += `🎯 Meta del día: ${formatCurrency(meta)}\n`;
+                report += `📌 Faltó: ${formatCurrency(Math.abs(diferencia))}\n`;
+            }
+        }
         report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
-        // Desglose por plataforma y método de pago ordenado descendente
-        report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
-        const stats = {};
+        // Cambio 2 — Desglose por plataforma con efectivo/digital separados
+        const METODOS_EFECTIVO = ['efectivo', 'cash'];
+        const porPlataforma = {};
+
         state.carreras.forEach(c => {
-            const key = `${c.platform}_${c.payment}`;
-            if (!stats[key]) {
-                stats[key] = { platform: c.platform, payment: c.payment, total: 0, count: 0 };
+            const nombre = getPlatformName(c.platform, state.settings.plataformas).toUpperCase();
+            if (!porPlataforma[nombre]) {
+                porPlataforma[nombre] = { total: 0, carreras: 0, efectivo: 0, digital: 0 };
             }
-            stats[key].total += (c.neto || c.amount);
-            stats[key].count++;
+            const monto = c.neto || c.amount;
+            porPlataforma[nombre].total += monto;
+            porPlataforma[nombre].carreras += 1;
+
+            if (METODOS_EFECTIVO.includes((c.payment || '').toLowerCase())) {
+                porPlataforma[nombre].efectivo += monto;
+            } else {
+                porPlataforma[nombre].digital += monto;
+            }
         });
-        Object.values(stats)
-            .sort((a, b) => b.total - a.total)
-            .forEach(data => {
-                const name = getPlatformName(data.platform, state.settings.plataformas);
-                const paymentName = data.payment ? data.payment.charAt(0).toUpperCase() + data.payment.slice(1) : 'Desconocido';
-                report += `  • ${name.toUpperCase()}: ${formatCurrency(data.total)} (${data.count} carrera${data.count === 1 ? '' : 's'}) | ${paymentName}\n`;
-            });
+
+        const plataformasOrdenadas = Object.entries(porPlataforma)
+            .sort((a, b) => b[1].total - a[1].total);
+
+        report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
+        plataformasOrdenadas.forEach(([nombre, datos]) => {
+            const numCarreras = datos.carreras === 1 ? '1 carrera' : `${datos.carreras} carreras`;
+            report += `  • ${nombre}: ${formatCurrency(datos.total)} (${numCarreras})\n`;
+            if (datos.efectivo > 0) {
+                report += `    💵 Efectivo: ${formatCurrency(datos.efectivo)}\n`;
+            }
+            if (datos.digital > 0) {
+                report += `    💳 Digital: ${formatCurrency(datos.digital)}\n`;
+            }
+        });
 
         report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
         report += `#RutaPro`;

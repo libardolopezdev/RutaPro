@@ -17,15 +17,43 @@ export const authModule = {
             if (user) {
                 store.setState({ user });
                 
-                // MIGRATION / SYNC: Force Firestore settings to win over localStorage
                 try {
+                    // DETECT FIRST LOGIN OR PENDING ONBOARDING
+                    const userProfile = await firestoreService.checkUserProfile(user.uid);
+                    
+                    if (!userProfile) {
+                        this.showOnboarding();
+                        return; // Stop here, wait for onboarding to complete
+                    }
+                    
+                    if (userProfile.settings && userProfile.settings.onboardingCompleted === false) {
+                        this.showOnboarding();
+                        return; // Stop here, wait for onboarding to complete
+                    }
+                    
+                    // MIGRATION / SYNC: Force Firestore settings to win over localStorage
                     const settingsData = await firestoreService.getSettings(user.uid);
-                    if (settingsData) {
-                        // Limpiar y reescribir con datos frescos (Firestore gana)
-                        store.setState({ settings: settingsData });
+                    
+                    // Si el usuario es nuevo, las settings están en el doc raíz (userProfile)
+                    // Si es un usuario de antes, podrían estar en la subcolección (settingsData)
+                    let activeSettings = settingsData || (userProfile && userProfile.settings) || {};
+                    
+                    // Auto-migrar la key vieja metaDiariaGlobal a meta
+                    if (activeSettings.metaDiariaGlobal !== undefined) {
+                        activeSettings.meta = activeSettings.metaDiariaGlobal;
+                        delete activeSettings.metaDiariaGlobal;
+                        
+                        // Si existe settingsData (subcolección), la actualizamos
+                        if (settingsData) {
+                            await firestoreService.saveSettings(user.uid, activeSettings);
+                        }
+                    }
+
+                    if (Object.keys(activeSettings).length > 0) {
+                        store.setState({ settings: activeSettings });
                     }
                 } catch (err) {
-                    console.warn("No se pudo cargar config de Firestore (modo offline probable)", err);
+                    console.warn("No se pudo verificar estado de onboarding o config", err);
                 }
 
                 // Suscripción en tiempo real a settings
@@ -48,20 +76,57 @@ export const authModule = {
                     this.settingsUnsub();
                     this.settingsUnsub = null;
                 }
-                store.setState({ user: null });
-                this.showLogin();
+                store.clear();
+                this.showLanding();
             }
         });
     },
 
     async login(email, password) {
         try {
-            this.setLoading(true);
+            this.setLoading(true, 'login');
             await auth.signInWithEmailAndPassword(email, password);
         } catch (err) {
-            this.showError(err.message);
+            this.showError(this.getHumanReadableError(err));
         } finally {
-            this.setLoading(false);
+            this.setLoading(false, 'login');
+        }
+    },
+
+    async register(name, email, password) {
+        try {
+            this.setLoading(true);
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            
+            // Set displayName in Firebase Auth
+            await userCredential.user.updateProfile({
+                displayName: name
+            });
+            
+            // Force reload to ensure the profile update is recognized
+            await userCredential.user.reload();
+            
+            // Force state update to immediately propagate displayName to the header
+            store.setState({ user: auth.currentUser });
+            
+            // Realtime listener in init() will catch this and route to onboarding
+        } catch (err) {
+            this.showError(this.getHumanReadableError(err));
+        } finally {
+            this.setLoading(false, 'register');
+        }
+    },
+
+    async sendPasswordReset(email) {
+        try {
+            this.setLoading(true, 'login'); // Use login button for loading state visually
+            await auth.sendPasswordResetEmail(email);
+            alert('Te hemos enviado un correo con las instrucciones para restablecer tu contraseña. Revisa también tu carpeta de spam.');
+            this.showError(''); // Clear errors on success
+        } catch (err) {
+            this.showError(this.getHumanReadableError(err));
+        } finally {
+            this.setLoading(false, 'login');
         }
     },
 
@@ -71,7 +136,13 @@ export const authModule = {
             this.setLoading(true);
             await auth.signInWithPopup(provider);
         } catch (err) {
-            this.showError(err.message);
+            // Si el usuario cerró el popup voluntariamente, ignorar silenciosamente
+            if (err.code === 'auth/popup-closed-by-user' || 
+                err.code === 'auth/cancelled-popup-request') {
+                return; // No mostrar nada — el usuario decidió no continuar
+            }
+            
+            this.showError(this.getHumanReadableError(err));
         } finally {
             this.setLoading(false);
         }
@@ -79,6 +150,10 @@ export const authModule = {
 
     async logout() {
         if (confirm('¿Cerrar sesión?')) {
+            // Cierre explícito de la Configuración y otros modales anclados
+            const settingsModal = document.getElementById('settingsModal');
+            if (settingsModal) settingsModal.style.display = 'none';
+            
             // Cancelar listener de sync antes de salir
             if (activeJornadaUnsub) {
                 activeJornadaUnsub();
@@ -99,7 +174,13 @@ export const authModule = {
     },
 
     showApp() {
-        document.getElementById('loginScreen').style.display = 'none';
+        const landing = document.getElementById('landingScreen');
+        if (landing) landing.style.display = 'none';
+        const emailAuth = document.getElementById('emailAuthScreen');
+        if (emailAuth) emailAuth.style.display = 'none';
+        const onboarding = document.getElementById('onboardingScreen');
+        if (onboarding) onboarding.style.display = 'none';
+        
         document.getElementById('appContainer').style.display = 'block';
         
         const state = store.getState();
@@ -128,21 +209,90 @@ export const authModule = {
         }
     },
 
-    showLogin() {
-        document.getElementById('loginScreen').style.display = 'flex';
+    showLanding() {
+        const modals = document.querySelectorAll('.modal-overlay');
+        modals.forEach(m => m.style.display = 'none');
+
+        const landing = document.getElementById('landingScreen');
+        if (landing) landing.style.display = 'flex';
+        const emailAuth = document.getElementById('emailAuthScreen');
+        if (emailAuth) emailAuth.style.display = 'none';
         document.getElementById('appContainer').style.display = 'none';
+        const onboarding = document.getElementById('onboardingScreen');
+        if (onboarding) onboarding.style.display = 'none';
     },
 
-    setLoading(loading) {
-        const btns = document.querySelectorAll('.login-btn');
-        btns.forEach(b => b.disabled = loading);
+    showOnboarding() {
+        const modals = document.querySelectorAll('.modal-overlay');
+        modals.forEach(m => m.style.display = 'none');
+
+        const landing = document.getElementById('landingScreen');
+        if (landing) landing.style.display = 'none';
+        const emailAuth = document.getElementById('emailAuthScreen');
+        if (emailAuth) emailAuth.style.display = 'none';
+        document.getElementById('appContainer').style.display = 'none';
+        const onboarding = document.getElementById('onboardingScreen');
+        if (onboarding) onboarding.style.display = 'flex';
+        
+        // Ensure step 1 is active
+        if (window.onboardingModule && window.onboardingModule.init) {
+            window.onboardingModule.init();
+        }
+    },
+
+    setLoading(loading, type = 'all') {
+        const btnReg = document.getElementById('btnRegister');
+        const btnLog = document.getElementById('btnLogin');
+        const regText = document.getElementById('btnRegisterText');
+        const logText = document.getElementById('btnLoginText');
+        const regLoad = document.getElementById('btnRegisterLoading');
+        const logLoad = document.getElementById('btnLoginLoading');
+
+        if (type === 'all' || type === 'register') {
+            if (btnReg) btnReg.disabled = loading;
+            if (regText) regText.style.opacity = loading ? '0' : '1';
+            if (regLoad) regLoad.style.display = loading ? 'block' : 'none';
+        }
+        
+        if (type === 'all' || type === 'login') {
+            if (btnLog) btnLog.disabled = loading;
+            if (logText) logText.style.opacity = loading ? '0' : '1';
+            if (logLoad) logLoad.style.display = loading ? 'block' : 'none';
+        }
+    },
+
+    getHumanReadableError(err) {
+        const code = err.code || '';
+        switch(code) {
+            case 'auth/popup-closed-by-user':
+            case 'auth/cancelled-popup-request':
+                return null;
+            case 'auth/popup-blocked':
+                return 'El navegador bloqueó la ventana de Google. Permite los popups e intenta de nuevo.';
+            case 'auth/email-already-in-use':
+                return 'Este correo ya tiene una cuenta registrada.';
+            case 'auth/invalid-email':
+                return 'El formato del correo es inválido.';
+            case 'auth/weak-password':
+                return 'La contraseña es muy débil (mínimo 6 caracteres).';
+            case 'auth/user-not-found':
+                return 'No encontramos una cuenta con este correo.';
+            case 'auth/wrong-password':
+                return 'La contraseña es incorrecta.';
+            case 'auth/too-many-requests':
+                return 'Demasiados intentos fallidos. Intenta más tarde o restablece tu contraseña.';
+            case 'auth/network-request-failed':
+                return 'Error de conexión. Revisa tu internet e intenta de nuevo.';
+            default:
+                return 'Ocurrió un error inesperado. Intenta de nuevo.';
+        }
     },
 
     showError(msg) {
         const err = document.getElementById('authError');
         if (err) {
             err.textContent = msg;
-            err.style.display = 'block';
+            err.style.display = msg ? 'block' : 'none';
         }
     }
 };

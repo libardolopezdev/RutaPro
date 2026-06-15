@@ -7,6 +7,11 @@ const STORAGE_KEY = 'rutapro-state';
 const HISTORICO_KEY = 'rutapro-historico';
 
 export const storageService = {
+    clear() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(HISTORICO_KEY);
+    },
+
     saveState(state) {
         try {
             const { user, isOnline, ...persistableState } = state;

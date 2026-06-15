@@ -1,4 +1,4 @@
-import { formatCurrency, normalizePlatform, renderAvatarPlataforma, getContrastSafeColor, getColorOficial, normalizarNombre } from '../utils/format.js';
+import { formatCurrency, normalizePlatform, renderAvatarPlataforma, getColorOficial, normalizarNombre, getColorPlataforma, escapeHTML } from '../utils/format.js';
 import { updateGreeting } from '../utils/greeting.js';
 
 /**
@@ -60,10 +60,10 @@ const elements = {
 export const renderer = {
     render(state) {
         this.updateDate();
+        this.updateUserHeader(state);
         this.updateMetaProgress(state);
         this.updateConsolidados(state);
         this.updateStatsRow(state);
-        // this.updateGoalCards(state); // Eliminado para no sobrescribir barra
         this.updateActionButtons(state);
         this.updateSummary(state);
         this.updateCarrerasList(state);
@@ -80,6 +80,22 @@ export const renderer = {
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             elements.currentDate.textContent = now.toLocaleDateString('es-ES', options);
         }
+    },
+
+    updateUserHeader(state) {
+        const userNameEl = document.getElementById('userName');
+        const userAvatarEl = document.getElementById('userAvatarLetter');
+        if (!userNameEl || !userAvatarEl) return;
+
+        let name = 'Usuario';
+        if (state.user && state.user.displayName) {
+            name = state.user.displayName;
+        } else if (state.user && state.user.email) {
+            name = state.user.email.split('@')[0];
+        }
+
+        userNameEl.textContent = name;
+        userAvatarEl.textContent = name.charAt(0).toUpperCase();
     },
 
     updateActionButtons(state) {
@@ -117,10 +133,6 @@ export const renderer = {
 
     },
 
-    updateGoalCards(state) {
-        // Función obsoleta tras el rediseño. La lógica fue movida a updateMetaProgress
-    },
-
     updateRenderPlatformButtons(state) {
         const container = elements.platformButtonsContainer;
         if (!container) return;
@@ -130,7 +142,7 @@ export const renderer = {
             const btn = document.createElement('div');
             btn.className = `p-chip ${state.selectedPlatform === plat.id ? 'active' : ''}`;
             btn.dataset.platform = plat.id;
-            btn.innerHTML = `<span>${plat.name}</span>`;
+            btn.innerHTML = `<span>${escapeHTML(plat.name)}</span>`;
 
             // Si es el ltimo item y el total es impar, ocupa 2 columnas
             if (index === plataformas.length - 1 && plataformas.length % 2 !== 0) {
@@ -425,18 +437,18 @@ export const renderer = {
             const pct = totalGeneral > 0 ? Math.round((data.total / totalGeneral) * 100) : 0;
             const avatarHtml = await renderAvatarPlataforma(norm);
             const colorBarra = getColorBarra(norm, state.settings.plataformas);
-            const colorSeguro = getContrastSafeColor(colorBarra, isDark);
+            const colorSeguro = getColorPlataforma(norm.name, colorBarra);
 
             return `
                 <div class="platform-stat-row">
                     ${avatarHtml}
                     <div class="platform-stat-content">
                         <div class="platform-stat-header">
-                            <span class="platform-stat-name">${norm.name}${statusLabel}</span>
+                            <span class="platform-stat-name">${escapeHTML(norm.name)}${statusLabel}</span>
                             <span class="platform-stat-val">${formatCurrency(data.total)}</span>
                         </div>
                         <div class="platform-stat-track" style="background: ${trackBg};">
-                            <div style="background: ${colorBarra}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 8px ${colorBarra}60; transition: width 1s var(--ease);"></div>
+                            <div style="background: ${colorSeguro}; height: 100%; border-radius: 8px; width: ${pct}%; box-shadow: 0 0 8px ${colorSeguro}60; transition: width 1s var(--ease);"></div>
                         </div>
                     </div>
                     <div class="platform-stat-pct" style="color: ${colorSeguro};">
@@ -458,7 +470,7 @@ export const renderer = {
                 <div class="ride-item" style="display:flex; align-items:center; gap:12px;">
                     ${avatarHtml}
                     <div class="ride-meta" style="flex:1;">
-                        <span class="ride-plat" style="color:${norm.color}">${norm.name}</span>
+                        <span class="ride-plat" style="color:${norm.color}">${escapeHTML(norm.name)}</span>
                         <span class="ride-time">${new Date(c.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} • ${c.payment.toUpperCase()}</span>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -517,7 +529,7 @@ export const renderer = {
         elements.listaGastos.innerHTML = state.gastos.map(g => `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.03);">
                 <div style="font-size:12px;">
-                    <span style="text-transform:capitalize; font-weight:700;">${g.tipo}</span>
+                    <span style="text-transform:capitalize; font-weight:700;">${escapeHTML(g.tipo)}</span>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <span style="font-family:'JetBrains Mono'; font-weight:600; color:var(--ruby);">${formatCurrency(g.monto)}</span>
