@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.rutapro.app",
+      "sha256_cert_fingerprints": [
+        "A7:77:60:08:A7:7B:61:62:E5:F5:59:1C:A3:40:D7:10:B0:90:8B:6B:72:19:48:AE:D1:87:4E:41:E8:C8:13:36"
+      ]
+    }
+  }
+]
