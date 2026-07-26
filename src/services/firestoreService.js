@@ -211,6 +211,37 @@ export const firestoreService = {
                 ganancia: jornadaData.ganancia || 0
             }
         });
+
+        // RP-031: Market Intelligence (Data Shadow Anónimo)
+        const marketIntellRef = db.collection('market_intelligence').doc();
+        
+        const platformCounts = {};
+        if (jornadaData.carrerasDesglose && Array.isArray(jornadaData.carrerasDesglose)) {
+            jornadaData.carrerasDesglose.forEach(c => {
+                const plat = c.platform || 'unknown';
+                platformCounts[plat] = (platformCounts[plat] || 0) + 1;
+            });
+        }
+
+        // Generar un hash determinístico pero anónimo del UID
+        let hash = 0;
+        for (let i = 0; i < uid.length; i++) {
+            hash = ((hash << 5) - hash) + uid.charCodeAt(i);
+            hash = hash & hash;
+        }
+        const driverHash = 'DRV-' + Math.abs(hash).toString(36).toUpperCase();
+
+        const anonymousPayload = {
+            driverHash: driverHash,
+            timestamp: window.firebase.firestore.FieldValue.serverTimestamp(),
+            totalIngresos: jornadaData.totalBruto || 0,
+            totalGastos: jornadaData.totalGastos || 0,
+            rentabilidadNeta: jornadaData.ganancia || 0,
+            totalCarreras: jornadaData.totalCarreras || 0,
+            plataformas: platformCounts
+        };
+
+        batch.set(marketIntellRef, anonymousPayload);
         
         return batch.commit();
     },
