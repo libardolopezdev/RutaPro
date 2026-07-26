@@ -114,7 +114,7 @@ export const carrerasModule = {
             // No usamos await para evitar bloquear el hilo principal si está offline.
             // writeBatch encolará la petición y se sincronizará cuando recupere la conexión.
             firestoreService.cerrarJornadaTransaccional(state.user.uid, jornadaData)
-                .catch(e => // console.warn('Cierre de jornada offline/background:', e));
+                .catch(e => { /* console.warn('Cierre de jornada offline/background:', e); */ });
         }
 
         // Limpieza local inmediata

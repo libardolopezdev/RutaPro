@@ -19,7 +19,7 @@ try {
         app = window.firebase.initializeApp(firebaseConfig);
         // Habilitar persistencia offline
         window.firebase.firestore().enablePersistence({ synchronizeTabs: true })
-            .catch(err => // console.warn('Persistencia offline:', err.code));
+            .catch(err => { /* console.warn('Persistencia offline:', err.code); */ });
     } else {
         app = window.firebase.app();
     }
