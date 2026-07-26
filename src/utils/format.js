@@ -3,11 +3,12 @@
  */
 
 export function formatCurrency(amount) {
-    return new Intl.NumberFormat('es-CO', {
+    const formatted = new Intl.NumberFormat('es-CO', {
         style: 'currency',
         currency: 'COP',
         minimumFractionDigits: 0
     }).format(amount);
+    return formatted.replace(/\s+/g, '');
 }
 
 export function escapeHTML(str) {
@@ -42,8 +43,8 @@ export function normalizePlatform(platformId, settingsPlatforms = []) {
     const rawId = (platformId || '').trim();
     if (!rawId) return { id: 'unknown', name: 'Desconocida', color: '#6b7280', isActiva: false };
 
-    // Cache key incluye las plataformas activas (simplificado por IDs) para invalidación básica
-    const activeIdsStr = settingsPlatforms.map(p => p.id).join(',');
+    // Cache key incluye IDs + colores para invalidar cuando cambia el color de una plataforma
+    const activeIdsStr = settingsPlatforms.map(p => `${p.id}:${p.color || ''}`).join(',');
     const cacheKey = `${rawId.toLowerCase()}_${activeIdsStr}`;
     if (platformCache.has(cacheKey)) return platformCache.get(cacheKey);
 
@@ -148,7 +149,8 @@ const ALIASES = {
     'parada': 'SIN_LOGO',
     'tradicional': 'SIN_LOGO',
     'taxi tradicional': 'SIN_LOGO',
-    'taxitradicionl': 'SIN_LOGO',
+    'taxitradicional': 'SIN_LOGO',  // alias correcto
+    'taxitradicionl': 'SIN_LOGO',   // alias legado (typo) — mantener por compatibilidad histórica
     'taxi': 'SIN_LOGO',
     'taxista': 'SIN_LOGO',
     'servicio': 'SIN_LOGO',
@@ -240,9 +242,12 @@ export function resolverIdCanonico(nombrePlataforma) {
     const sinEspacios = normalizado.replace(/\s+/g, '');
     if (ALIASES[sinEspacios]) return ALIASES[sinEspacios];
 
-    // 3. Match parcial
+    // 3. Match parcial — solo dirección: el input CONTIENE al alias.
+    // La dirección inversa (alias.includes(normalizado)) fue eliminada en RP-003
+    // porque generaba falsos positivos con nombres cortos (ej: "Cab" → Cabify)
+    // sin aportar ningún caso de uso real en el catálogo actual.
     for (const [alias, id] of Object.entries(ALIASES)) {
-        if (normalizado.includes(alias) || alias.includes(normalizado)) {
+        if (normalizado.includes(alias)) {
             return id;
         }
     }
@@ -348,7 +353,7 @@ export async function renderAvatarPlataforma(plataforma, size = 40) {
     return `
         <div style="${estiloBase}position:relative;">
             <img src="${logoUrl}"
-                alt="${plataforma.name}"
+                alt="${escapeHTML(plataforma.name)}"
                 style="width:${Math.round(size * 0.7)}px;height:${Math.round(size * 0.7)}px;object-fit:contain;"
                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
             />
@@ -363,4 +368,63 @@ export async function renderAvatarPlataforma(plataforma, size = 40) {
  */
 export function limpiarCacheLogo() {
     _logoCache.clear();
+}
+
+/**
+ * RP-004: Devuelve el catálogo deduplicado de plataformas con logo oficial y servicios directos.
+ * @returns {{ plataformas: Array, directos: Array }}
+ */
+export function getCatalogoPlatformas() {
+    const vistos = new Set();
+    const plataformas = [];
+    const directos = [];
+
+    // Nombres oficiales canónicos (el nombre que se mostrará en el autocomplete)
+    const NOMBRES_OFICIALES = {
+        'uber': 'UBER',
+        'didi': 'DIDI',
+        'cabify': 'CABIFY',
+        'indriver': 'INDRIVER',
+        'beat': 'BEAT',
+        'rappi': 'RAPPI',
+        'picap': 'PICAP',
+        'coopebombas': 'COOPEBOMBAS',
+        'taxislibres': 'TAXIS LIBRES',
+    };
+
+    const ORDER_PLATAFORMAS = [
+        'CABIFY', 'UBER', 'DIDI', 'INDRIVER', 'COOPEBOMBAS', 'PICAP', 'RAPPI', 'BEAT', 'TAXIS LIBRES'
+    ];
+
+    for (const [, idCanonico] of Object.entries(ALIASES)) {
+        if (idCanonico === 'SIN_LOGO') continue;
+        if (idCanonico.startsWith('CUSTOM_')) continue;
+        if (vistos.has(idCanonico)) continue;
+
+        vistos.add(idCanonico);
+        const nombreOficial = NOMBRES_OFICIALES[idCanonico] || idCanonico.toUpperCase();
+        const colorOficial = getColorPlataforma(idCanonico, null);
+
+        plataformas.push({ idCanonico, nombreOficial, colorOficial, type: 'plataforma' });
+    }
+
+    // Ordenar plataformas según la prioridad solicitada
+    plataformas.sort((a, b) => {
+        let idxA = ORDER_PLATAFORMAS.indexOf(a.nombreOficial);
+        let idxB = ORDER_PLATAFORMAS.indexOf(b.nombreOficial);
+        if (idxA === -1) idxA = 999;
+        if (idxB === -1) idxB = 999;
+        return idxA - idxB;
+    });
+
+    const SERVICIOS_DIRECTOS = [
+        'MANO', 'PARADA', 'CALLE', 'PARTICULAR', 'TAXI TRADICIONAL', 'FLOTA BERNAL', 'TAX ESTADIO', 'TAX INDIVIDUAL', 'TAX SUPER', 'TAX POBLADO'
+    ];
+
+    SERVICIOS_DIRECTOS.forEach(nombre => {
+        const colorOficial = getColorPlataforma(normalizarNombre(nombre), null) || '#6B7280';
+        directos.push({ idCanonico: 'SIN_LOGO', nombreOficial: nombre, colorOficial, type: 'directo' });
+    });
+
+    return { plataformas, directos };
 }

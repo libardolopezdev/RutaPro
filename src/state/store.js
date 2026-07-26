@@ -12,12 +12,11 @@ const DEFAULT_PLATFORMS = [
 ];
 
 const initialState = {
+    isSyncing: true,
     jornadaIniciada: false,
     jornadaInicio: null,
     carreras: [],
     gastos: [],
-    selectedPlatform: null,
-    selectedPayment: null,
     baseEfectivo: 0,
     settings: {
         meta: 270000,
@@ -25,7 +24,16 @@ const initialState = {
         plataformas: [...DEFAULT_PLATFORMS]
     },
     user: null,
-    isOnline: navigator.onLine
+    isOnline: navigator.onLine,
+    // RP-001 v2: Estado de sincronización con Firestore.
+    // fromCache: true mientras los datos provienen de IndexedDB local.
+    // hasPendingWrites: true si existen escrituras locales no confirmadas.
+    // synchronized: true cuando el servidor confirmó los datos al menos una vez.
+    sync: {
+        fromCache: true,
+        hasPendingWrites: false,
+        synchronized: false
+    }
 };
 
 class Store {
@@ -141,12 +149,11 @@ class Store {
     clear() {
         storageService.clear();
         this._state = {
+            isSyncing: true,
             jornadaIniciada: false,
             jornadaInicio: null,
             carreras: [],
             gastos: [],
-            selectedPlatform: null,
-            selectedPayment: null,
             baseEfectivo: 0,
             settings: {
                 meta: 270000,
@@ -154,7 +161,12 @@ class Store {
                 plataformas: [...DEFAULT_PLATFORMS]
             },
             user: null,
-            isOnline: navigator.onLine
+            isOnline: navigator.onLine,
+            sync: {
+                fromCache: true,
+                hasPendingWrites: false,
+                synchronized: false
+            }
         };
         this._notify();
     }

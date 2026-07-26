@@ -53,14 +53,17 @@ export const authModule = {
                         store.setState({ settings: activeSettings });
                     }
                 } catch (err) {
-                    console.warn("No se pudo verificar estado de onboarding o config", err);
+                    // console.warn("No se pudo verificar estado de onboarding o config", err);
                 }
 
                 // Suscripción en tiempo real a settings
                 if (!this.settingsUnsub) {
                     this.settingsUnsub = firestoreService.subscribeToSettings(
                         user.uid,
-                        (remoteSettings) => {
+                        (remoteSettings, metadata) => {
+                            // RP-001 v2: Evitar sobreescribir settings con caché viejo al arrancar online
+                            if (metadata && metadata.fromCache && navigator.onLine) return;
+
                             if (remoteSettings) {
                                 store.setState({ settings: remoteSettings });
                             }
@@ -189,20 +192,52 @@ export const authModule = {
 
             activeJornadaUnsub = firestoreService.subscribeToActiveJornada(
                 state.user.uid,
-                (remoteJornada) => {
+                (remoteJornada, metadata) => {
+                    const syncState = {
+                        fromCache: metadata?.fromCache ?? false,
+                        hasPendingWrites: metadata?.hasPendingWrites ?? false,
+                        synchronized: metadata ? !metadata.fromCache : true
+                    };
+
                     const remoteMillis = remoteJornada.updatedAt?.toMillis() || 0;
                     
-                    // Sincronizar solo si el timestamp remoto es diferente (toMillis para precisión)
-                    // Esto evita loops infinitos y asegura que el snapshot sea la fuente de verdad.
+                    // RP-001 v2: Evitar flash de datos viejos en la carga inicial online.
+                    // Solo actualizamos el estado sync para que la app sepa que está cargando,
+                    // pero no sobreescribimos los datos (carreras/gastos) con caché obsoleto.
+                    if (metadata && metadata.fromCache && navigator.onLine) {
+                        store.setState({ sync: syncState });
+                        return;
+                    }
+
+                    // Sincronizar inteligentemente (RP-025)
                     if (remoteMillis !== lastProcessedMillis) {
                         lastProcessedMillis = remoteMillis;
                         
-                        store.setState({
-                            jornadaIniciada: remoteJornada.jornadaIniciada,
-                            jornadaInicio: remoteJornada.jornadaInicio,
-                            carreras: remoteJornada.carreras,
-                            gastos: remoteJornada.gastos
-                        });
+                        const currentState = store.getState();
+                        const isSameJornada = currentState.jornadaIniciada === remoteJornada.jornadaIniciada;
+                        
+                        // Validar si los arreglos de carreras y gastos tienen los mismos montos y cantidad
+                        const getHash = (arr) => arr.length + '-' + arr.reduce((s, x) => s + (x.neto || x.amount || x.monto || 0), 0);
+                        const isSameData = getHash(currentState.carreras) === getHash(remoteJornada.carreras || []) &&
+                                           getHash(currentState.gastos) === getHash(remoteJornada.gastos || []);
+
+                        if (isSameJornada && isSameData) {
+                            // Igual! Solo quitamos isSyncing
+                            store.setState({ sync: syncState, isSyncing: false });
+                        } else {
+                            // Diferente! Hacemos render final
+                            store.setState({
+                                jornadaIniciada: remoteJornada.jornadaIniciada,
+                                jornadaInicio: remoteJornada.jornadaInicio,
+                                carreras: remoteJornada.carreras,
+                                gastos: remoteJornada.gastos,
+                                sync: syncState,
+                                isSyncing: false
+                            });
+                        }
+                    } else {
+                        // RP-001 v2 + RP-025
+                        store.setState({ sync: syncState, isSyncing: false });
                     }
                 }
             );

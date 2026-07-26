@@ -182,7 +182,7 @@ export const onboardingModule = {
 
             this.showStep(4);
         } catch (error) {
-            console.error('Error guardando perfil:', error);
+            // console.error('Error guardando perfil:', error);
             alert('Hubo un error guardando tu perfil. Intenta de nuevo.');
         }
     }

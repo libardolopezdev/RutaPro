@@ -35,6 +35,20 @@ export const firestoreService = {
             });
     },
 
+    /**
+     * Obtiene una página del histórico de jornadas de Firestore.
+     * 
+     * IMPORTANTE:
+     * - Es una consulta paginada (devuelve máximo `limitCount` documentos).
+     * - Está destinada al módulo de Historial (para renderizado visual y scroll infinito).
+     * - NO DEBE utilizarse para cálculos estadísticos, ya que ignora el resto de jornadas del usuario.
+     * 
+     * @param {string} uid - ID del usuario autenticado.
+     * @param {boolean} includeDeleted - Si es true, incluye jornadas enviadas a la papelera.
+     * @param {number} limitCount - Número máximo de documentos a devolver (por defecto 20).
+     * @param {object} lastDoc - Documento a partir del cual iniciar la página (para paginación).
+     * @returns {Promise<{ data: Array, lastVisible: object }>}
+     */
     async getHistorico(uid, includeDeleted = false, limitCount = 20, lastDoc = null) {
         let query = db.collection('users').doc(uid)
             .collection('historico')
@@ -64,6 +78,79 @@ export const firestoreService = {
             data: filteredData,
             lastVisible: snapshot.docs[snapshot.docs.length - 1]
         };
+    },
+
+    /**
+     * RP-007: Obtiene el histórico completo de jornadas de Firestore.
+     * 
+     * IMPORTANTE:
+     * - Recupera la totalidad del histórico activo (sin límite de documentos).
+     * - Está destinada EXCLUSIVAMENTE al módulo de Estadísticas.
+     * - Utiliza paginación interna transparente para evitar timeouts en Firestore,
+     *   pero devuelve un único array con todos los resultados.
+     * - NO DEBE utilizarse para el historial visual, ya que podría afectar el rendimiento.
+     *
+     * @param {string} uid - ID del usuario autenticado.
+     * @returns {Promise<{ data: Array }>}
+     */
+    async getHistoricoParaEstadisticas(uid) {
+        // Número de documentos por página. Valor de 100 es el punto óptimo entre
+        // número de round-trips y tamaño de payload por request en Firestore.
+        const STATS_PAGE_SIZE = 100;
+
+        const nowMs = Date.now();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const historicoRef = db.collection('users').doc(uid).collection('historico');
+
+        let acumulado = [];
+        let lastVisible = null;
+        let hayMasPaginas = true;
+
+        while (hayMasPaginas) {
+            let query = historicoRef
+                .orderBy('createdAt', 'desc')
+                .limit(STATS_PAGE_SIZE);
+
+            if (lastVisible) {
+                query = query.startAfter(lastVisible);
+            }
+
+            const snapshot = await query.get();
+
+            if (snapshot.empty) {
+                hayMasPaginas = false;
+                break;
+            }
+
+            snapshot.docs.forEach(doc => {
+                const d = { id: doc.id, ...doc.data() };
+
+                // Excluir jornadas en papelera (misma lógica que getHistorico)
+                if (d.deletedAt) {
+                    const delTime = d.deletedAt.toMillis
+                        ? d.deletedAt.toMillis()
+                        : (d.deletedAt.seconds ? d.deletedAt.seconds * 1000 : nowMs);
+
+                    // Auto-purge de documentos en papelera con más de 30 días
+                    if (nowMs - delTime > thirtyDaysMs) {
+                        historicoRef.doc(d.id).delete();
+                    }
+                    // No incluir en estadísticas, independientemente de si fue purgado
+                    return;
+                }
+
+                acumulado.push(d);
+            });
+
+            // Si la página vino completa, puede haber más. Si no, terminamos.
+            if (snapshot.docs.length < STATS_PAGE_SIZE) {
+                hayMasPaginas = false;
+            } else {
+                lastVisible = snapshot.docs[snapshot.docs.length - 1];
+            }
+        }
+
+        return { data: acumulado };
     },
 
     async moveToTrash(uid, docId) {
@@ -108,12 +195,21 @@ export const firestoreService = {
         
         const jornadaRef = db.collection('users').doc(uid)
             .collection('jornada_activa').doc('data');
+            
+        // RP-026: Guardamos el status cerrado y los totales para tener garantía offline y sincronizar el estado limpio
         batch.set(jornadaRef, {
+            status: 'closed',
+            closedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
             jornadaIniciada: false,
             carreras: [],
             gastos: [],
             jornadaInicio: null,
-            updatedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: window.firebase.firestore.FieldValue.serverTimestamp(),
+            lastTotales: {
+                totalCarreras: jornadaData.totalCarreras || 0,
+                totalBruto: jornadaData.totalBruto || 0,
+                ganancia: jornadaData.ganancia || 0
+            }
         });
         
         return batch.commit();
@@ -134,15 +230,26 @@ export const firestoreService = {
         return doc.exists ? doc.data() : null;
     },
 
+    /**
+     * RP-001 v2: Suscripción a settings con metadata completa.
+     * - includeMetadataChanges:true garantiza que el callback dispare cuando
+     *   fromCache pasa de true a false, incluso si los datos no cambiaron.
+     * - doc.metadata se pasa como segundo argumento opcional para que el
+     *   consumidor decida qué hacer. Los consumidores existentes que solo
+     *   reciben el primer argumento continúan funcionando sin modificación.
+     * @param {string} uid
+     * @param {function(data: object, metadata: SnapshotMetadata)} callback
+     * @returns {function} Función de cancelación
+     */
     subscribeToSettings(uid, callback) {
         return db.collection('users').doc(uid)
             .collection('settings').doc('config')
-            .onSnapshot(doc => {
+            .onSnapshot({ includeMetadataChanges: true }, doc => {
                 if (doc.exists) {
-                    callback(doc.data());
+                    callback(doc.data(), doc.metadata);
                 }
             }, error => {
-                console.error("Error subscribing to settings:", error);
+                // console.error('Error subscribing to settings:', error);
             });
     },
 
@@ -156,18 +263,21 @@ export const firestoreService = {
     },
 
     /**
-     * Suscripción completa a la jornada activa que re-hidrata el store
-     * con carreras y gastos en tiempo real desde cualquier dispositivo.
-     * @param {string} uid - ID del usuario autenticado
-     * @param {function} callback - Recibe el objeto completo de jornada
-     * @returns {function} Función de cancelación del listener
+     * RP-001 v2: Suscripción a jornada activa con metadata completa.
+     * - includeMetadataChanges:true garantiza el disparo del servidor incluso
+     *   cuando los datos no cambiaron (solo cambia fromCache true→false).
+     * - doc.metadata se pasa como segundo argumento opcional. Los consumidores
+     *   existentes que no lo declaren continúan funcionando sin modificación.
+     * @param {string} uid
+     * @param {function(data: object, metadata: SnapshotMetadata)} callback
+     * @returns {function} Función de cancelación
      */
     subscribeToActiveJornada(uid, callback) {
         return db.collection('users').doc(uid)
             .collection('jornada_activa').doc('data')
-            .onSnapshot(doc => {
+            .onSnapshot({ includeMetadataChanges: true }, doc => {
                 if (!doc.exists) {
-                    callback({ jornadaIniciada: false, carreras: [], gastos: [], updatedAt: null });
+                    callback({ jornadaIniciada: false, carreras: [], gastos: [], updatedAt: null }, doc.metadata);
                     return;
                 }
                 const data = doc.data();
@@ -177,7 +287,7 @@ export const firestoreService = {
                     carreras: Array.isArray(data.carreras) ? data.carreras : [],
                     gastos: Array.isArray(data.gastos) ? data.gastos : [],
                     updatedAt: data.updatedAt // Objeto Timestamp de Firestore
-                });
+                }, doc.metadata);
             });
     },
 
@@ -212,7 +322,7 @@ export const firestoreService = {
                 await batch.commit();
             }
         } catch (error) {
-            console.error('Error durante la migración del historial en Firestore:', error);
+            // console.error('Error durante la migración del historial en Firestore:', error);
         }
     }
 }

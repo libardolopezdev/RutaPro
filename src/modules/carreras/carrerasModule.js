@@ -5,6 +5,8 @@ import { store } from '../../state/store.js';
 import { showToast } from '../../utils/ui-utils.js';
 import { formatCurrency, getPlatformName, normalizePlatform, renderAvatarPlataforma } from '../../utils/format.js';
 import { firestoreService } from '../../services/firestoreService.js';
+import { storageService } from '../../services/storageService.js';
+import { renderer } from '../../ui/renderer.js';
 
 // Persiste jornada activa (carreras + gastos) en Firestore para sincronización entre dispositivos.
 export async function syncJornadaToFirestore() {
@@ -19,7 +21,7 @@ export async function syncJornadaToFirestore() {
     try {
         await firestoreService.saveJornada(state.user.uid, syncPayload);
     } catch (e) {
-        console.warn('Sync a Firestore falló (modo offline):', e.message);
+        // console.warn('Sync a Firestore falló (modo offline):', e.message);
     }
 }
 
@@ -48,7 +50,11 @@ function stopJornadaTimer() {
 }
 
 
+let localPlatform = null;
+let localPayment = null;
+
 export const carrerasModule = {
+
     toggleJornada() {
         const state = store.getState();
         if (!state.jornadaIniciada) {
@@ -105,22 +111,41 @@ export const carrerasModule = {
         };
 
         if (state.user) {
-            // Guardar en histórico Y borrar la jornada activa de Firestore de forma atómica
-            await firestoreService.cerrarJornadaTransaccional(state.user.uid, jornadaData);
+            // No usamos await para evitar bloquear el hilo principal si está offline.
+            // writeBatch encolará la petición y se sincronizará cuando recupere la conexión.
+            firestoreService.cerrarJornadaTransaccional(state.user.uid, jornadaData)
+                .catch(e => // console.warn('Cierre de jornada offline/background:', e));
         }
 
+        // Limpieza local inmediata
         store.setState({
             carreras: [],
             gastos: [],
             jornadaIniciada: false,
-            jornadaInicio: null,
-            selectedPlatform: null,
-            selectedPayment: null
+            jornadaInicio: null
         });
+        
+        // RP-026: Sobrescribir localStorage con estado limpio para evitar que recargue la jornada
+        storageService.saveState(store.getState());
+        
+        localPlatform = null;
+        localPayment = null;
         stopJornadaTimer();
 
         document.getElementById('summaryModal').style.display = 'none';
-        showToast('Jornada guardada correctamente', 'success');
+
+        if (!navigator.onLine) {
+            showToast('Jornada cerrada y guardada localmente. Se sincronizará en la nube al recuperar conexión.', 'warning');
+        } else {
+            showToast('Jornada guardada correctamente', 'success');
+        }
+        
+        // Forzar renderizado a la pantalla principal
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const navHoy = document.getElementById('navHoy');
+        if (navHoy) navHoy.classList.add('active');
+        if (window.historicoModule) window.historicoModule.close();
+        if (window.estadisticasModule) window.estadisticasModule.close();
     },
 
     exportReport() {
@@ -129,31 +154,10 @@ export const carrerasModule = {
         const totalGastos = state.gastos.reduce((sum, g) => sum + g.monto, 0);
         const totalNeto = (state.carreras.reduce((sum, c) => sum + (c.neto || c.amount), 0)) - totalGastos;
 
-        let report = `🚗 *RUTAPRO — REPORTE DE JORNADA*\n`;
-        report += `📅 ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `✅ Carreras: ${state.carreras.length}\n`;
-        report += `💵 Total Bruto: ${formatCurrency(totalBruto)}\n`;
-        report += `📉 Gastos: ${formatCurrency(totalGastos)}\n`;
-        report += `💰 *Neto Total: ${formatCurrency(totalNeto)}*\n`;
-
-        // Cambio 1 — Meta y diferencia
-        const meta = state.settings.meta || 0;
-        const diferencia = totalNeto - meta;
-        if (meta > 0) {
-            if (diferencia > 0) {
-                report += `🏆 *Meta superada: + ${formatCurrency(diferencia)}*\n`;
-                report += `🎯 Meta del día: ${formatCurrency(meta)}\n`;
-            } else {
-                report += `🎯 Meta del día: ${formatCurrency(meta)}\n`;
-                report += `📌 Faltó: ${formatCurrency(Math.abs(diferencia))}\n`;
-            }
-        }
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-
-        // Cambio 2 — Desglose por plataforma con efectivo/digital separados
         const METODOS_EFECTIVO = ['efectivo', 'cash'];
         const porPlataforma = {};
+        let totalEfectivo = 0;
+        let totalDigital = 0;
 
         state.carreras.forEach(c => {
             const nombre = getPlatformName(c.platform, state.settings.plataformas).toUpperCase();
@@ -165,29 +169,103 @@ export const carrerasModule = {
             porPlataforma[nombre].carreras += 1;
 
             if (METODOS_EFECTIVO.includes((c.payment || '').toLowerCase())) {
+                totalEfectivo += monto;
                 porPlataforma[nombre].efectivo += monto;
             } else {
+                totalDigital += monto;
                 porPlataforma[nombre].digital += monto;
             }
         });
 
+        let report = `🚗 RUTAPRO — REPORTE DE JORNADA\n\n`;
+        
+        let fechaStr = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        fechaStr = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1);
+        report += `📅 ${fechaStr}\n\n`;
+        
+        report += `💳 MEDIOS DE PAGO\n\n`;
+        report += `💵 Efectivo: ${formatCurrency(totalEfectivo)}\n`;
+        report += `💳 Digital: ${formatCurrency(totalDigital)}\n\n`;
+        
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
+        report += `📈 RESUMEN GENERAL\n\n`;
+        report += `🚖 Carreras: ${state.carreras.length}\n\n`;
+        report += `💵 Ingreso bruto: ${formatCurrency(totalBruto)}\n\n`;
+
+        if (totalGastos > 0) {
+            let porcentajeText = '';
+            if (totalBruto > 0) {
+                const pct = Math.round((totalGastos / totalBruto) * 100);
+                porcentajeText = ` (${pct}%)`;
+            }
+            report += `📉 Gastos: ${formatCurrency(totalGastos)}${porcentajeText}\n`;
+            
+            const gastosAgrupados = {};
+            state.gastos.forEach(g => {
+                const tipo = g.tipo || 'otro';
+                gastosAgrupados[tipo] = (gastosAgrupados[tipo] || 0) + g.monto;
+            });
+            const GASTOS_LABELS = {
+                combustible: '⛽ Gasolina',
+                comida: '🍔 Alimentación',
+                peaje: '🛣️ Peaje',
+                lavado: '🧽 Lavado',
+                comision: '📱 Comisión',
+                parqueadero: '🅿️ Parqueadero',
+                otro: '📝 Otro'
+            };
+            Object.entries(gastosAgrupados).forEach(([tipo, monto]) => {
+                if (monto > 0) {
+                    const label = GASTOS_LABELS[tipo] || ('📝 ' + tipo.charAt(0).toUpperCase() + tipo.slice(1));
+                    report += `   ${label.padEnd(19, '.')}${formatCurrency(monto)}\n`;
+                }
+            });
+            report += `\n`;
+        } else {
+            report += `📉 Gastos: $0\n\n`;
+        }
+
+        report += `💰 Ganancia neta: ${formatCurrency(totalNeto)}\n\n`;
+        
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+        const meta = state.settings.meta || 0;
+        report += `🎯 META DEL DÍA\n\n`;
+        const diferencia = totalNeto - meta;
+        if (diferencia > 0) {
+            report += `🏆 Superaste la meta por ${formatCurrency(diferencia)}\n\n`;
+        } else if (diferencia === 0) {
+            report += `✅ Meta alcanzada\n\n`;
+        } else {
+            report += `📌 Faltaron ${formatCurrency(Math.abs(diferencia))}\n\n`;
+        }
+
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+        report += `📊 PLATAFORMAS\n\n`;
         const plataformasOrdenadas = Object.entries(porPlataforma)
             .sort((a, b) => b[1].total - a[1].total);
 
-        report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
-        plataformasOrdenadas.forEach(([nombre, datos]) => {
-            const numCarreras = datos.carreras === 1 ? '1 carrera' : `${datos.carreras} carreras`;
-            report += `  • ${nombre}: ${formatCurrency(datos.total)} (${numCarreras})\n`;
-            if (datos.efectivo > 0) {
-                report += `    💵 Efectivo: ${formatCurrency(datos.efectivo)}\n`;
+        plataformasOrdenadas.forEach(([nombre, datos], index) => {
+            report += `${nombre}\n`;
+            report += `  ${formatCurrency(datos.total)} • ${datos.carreras} carrera${datos.carreras !== 1 ? 's' : ''}\n`;
+            
+            let splitText = [];
+            if (datos.efectivo > 0) splitText.push(`💵 Efectivo: ${formatCurrency(datos.efectivo)}`);
+            if (datos.digital > 0) splitText.push(`💳 Digital: ${formatCurrency(datos.digital)}`);
+            
+            if (splitText.length > 0) {
+                report += `  ${splitText.join(' | ')}\n`;
             }
-            if (datos.digital > 0) {
-                report += `    💳 Digital: ${formatCurrency(datos.digital)}\n`;
+            
+            if (index < plataformasOrdenadas.length - 1) {
+                report += `\n`;
             }
         });
 
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `#RutaPro`;
+        report += `\n━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        report += `Generado con RutaPro`;
 
         if (navigator.share) {
             navigator.share({
@@ -196,7 +274,7 @@ export const carrerasModule = {
             }).then(() => {
                 // Share exitoso
             }).catch((e) => {
-                console.error('Error usando navigator.share:', e);
+                // console.error('Error usando navigator.share:', e);
                 // Solo hace fallback si el usuario no canceló la acción
                 if (e.name !== 'AbortError') {
                     copyToClipboard(report);
@@ -235,7 +313,7 @@ export const carrerasModule = {
                 document.execCommand('copy');
                 showToast('Reporte copiado al portapapeles', 'success');
             } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
+                // console.error('Fallback: Oops, unable to copy', err);
                 showToast('Error al copiar el reporte', 'error');
             }
             document.body.removeChild(textArea);
@@ -243,16 +321,100 @@ export const carrerasModule = {
     },
 
     selectPlatform(platform) {
-        store.setState({ selectedPlatform: platform });
+        localPlatform = platform;
+        const state = store.getState();
+        const plataformas = state.settings.plataformas || [];
+        
+        const container = document.getElementById('platformButtonsContainer');
+        if (container) {
+            const btns = container.querySelectorAll('.p-chip');
+            btns.forEach(btn => {
+                const platId = btn.dataset.platform;
+                const plat = plataformas.find(p => p.id === platId) || {id: platId};
+                
+                const isUber = plat.id === 'uber';
+                const pColor = isUber ? 'var(--uber-color)' : plat.color || 'var(--emerald)';
+                const pGlow = isUber ? 'var(--uber-glow)' : `${plat.color || '#10b981'}44`;
+                const pBg = isUber ? 'var(--uber-bg)' : `${plat.color || '#10b981'}22`;
+
+                if (platId === platform) {
+                    btn.classList.add('active');
+                    btn.style.borderColor = pColor;
+                    btn.style.boxShadow = `0 0 15px ${pGlow}`;
+                    btn.style.color = 'var(--text-primary)';
+                    btn.style.background = pBg;
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.borderColor = 'var(--border-glass)';
+                    btn.style.boxShadow = 'none';
+                    btn.style.color = 'var(--text-secondary)';
+                    btn.style.background = 'var(--surface-glass)';
+                }
+            });
+        }
+        this.updateAddButtonLocal();
     },
 
     selectPayment(payment) {
-        store.setState({ selectedPayment: payment });
+        localPayment = payment;
+        
+        const paymentColors = {
+            efectivo: { color: 'var(--emerald)', glow: 'var(--emerald-glow)' },
+            tarjeta: { color: 'var(--blue)', glow: 'var(--blue-glow)' },
+            vale: { color: 'var(--gold)', glow: 'var(--gold-glow)' },
+            transferencia: { color: 'var(--cyan)', glow: 'var(--cyan-glow)' }
+        };
+
+        const container = document.getElementById('paymentButtons');
+        if (container) {
+            const btns = container.querySelectorAll('[data-payment]');
+            btns.forEach(btn => {
+                const type = btn.dataset.payment;
+                const theme = paymentColors[type] || { color: 'var(--emerald)', glow: 'var(--emerald-glow)' };
+
+                if (type === payment) {
+                    btn.classList.add('active');
+                    btn.style.borderColor = theme.color;
+                    btn.style.color = theme.color;
+                    btn.style.background = theme.glow;
+                } else {
+                    btn.classList.remove('active');
+                    btn.style.borderColor = 'var(--border-glass)';
+                    btn.style.boxShadow = 'none';
+                    btn.style.color = 'var(--text-secondary)';
+                    btn.style.background = 'var(--surface-glass)';
+                }
+            });
+        }
+        this.updateAddButtonLocal();
+    },
+
+    updateAddButtonLocal() {
+        const addBtn = document.getElementById('addCarrera');
+        const amountInput = document.getElementById('amountInput');
+        if (!addBtn) return;
+
+        const amountValue = amountInput ? parseFloat(amountInput.value.replace(/\\D/g, '')) : 0;
+        let canAdd = false;
+        let label = addBtn.dataset.mode === 'edit' ? 'GUARDAR CAMBIOS' : 'REGISTRAR';
+
+        if (!amountValue || amountValue <= 0) {
+            label = 'INDIQUE VALOR';
+        } else if (!localPlatform) {
+            label = 'ELIJA PLATAFORMA';
+        } else if (!localPayment) {
+            label = 'ELIJA PAGO';
+        } else {
+            canAdd = true;
+        }
+
+        addBtn.disabled = !canAdd;
+        addBtn.textContent = label;
     },
 
     addCarrera(amount) {
         const state = store.getState();
-        if (!amount || !state.selectedPlatform || !state.selectedPayment) return;
+        if (!amount || !localPlatform || !localPayment) return;
 
         const addBtn = document.getElementById('addCarrera');
         const isEdit = addBtn && addBtn.dataset.mode === 'edit';
@@ -263,8 +425,8 @@ export const carrerasModule = {
                 if (c.id === editId) {
                     return {
                         ...c,
-                        platform: state.selectedPlatform,
-                        payment: state.selectedPayment,
+                        platform: localPlatform,
+                        payment: localPayment,
                         amount: amount,
                         neto: amount
                     };
@@ -274,10 +436,10 @@ export const carrerasModule = {
             
             store.setState({
                 carreras: updatedCarreras,
-                selectedPlatform: null,
-                selectedPayment: null,
                 editingRideId: null
             });
+            localPlatform = null;
+            localPayment = null;
             
             addBtn.textContent = 'LISTO';
             addBtn.dataset.mode = '';
@@ -286,17 +448,17 @@ export const carrerasModule = {
             const carrera = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
-                platform: state.selectedPlatform,
-                payment: state.selectedPayment,
+                platform: localPlatform,
+                payment: localPayment,
                 amount: amount,
                 neto: amount
             };
 
             store.setState({
-                carreras: [...state.carreras, carrera],
-                selectedPlatform: null,
-                selectedPayment: null
+                carreras: [...state.carreras, carrera]
             });
+            localPlatform = null;
+            localPayment = null;
             showToast('Carrera agregada ✓', 'success');
         }
 
@@ -349,10 +511,10 @@ export const carrerasModule = {
                 carreras: [],
                 gastos: [],
                 jornadaIniciada: false,
-                jornadaInicio: null,
-                selectedPlatform: null,
-                selectedPayment: null
+                jornadaInicio: null
             });
+            localPlatform = null;
+            localPayment = null;
             showToast('Todos los datos han sido eliminados del servidor', 'success');
         }
     },
@@ -454,22 +616,9 @@ export const carrerasModule = {
         // Populate modal (using variables from window.carrerasModule.editId if necessary, or just storing it in appState)
         store.setState({ editingRideId: id });
         
-        // Select platform and payment visually
+        // Manually update the visual selections
         this.selectPlatform(carrera.platform);
         this.selectPayment(carrera.payment);
-        
-        // Manually update the visual selections since the renderer might not catch selectedPayment/Platform right away depending on how it's wired
-        const platformBtns = document.querySelectorAll('.platform-btn');
-        platformBtns.forEach(btn => {
-            if (btn.dataset.platform === carrera.platform) btn.classList.add('selected');
-            else btn.classList.remove('selected');
-        });
-        
-        const paymentBtns = document.querySelectorAll('.payment-btn');
-        paymentBtns.forEach(btn => {
-            if (btn.dataset.payment === carrera.payment) btn.classList.add('selected');
-            else btn.classList.remove('selected');
-        });
 
         // Set amount
         const input = document.getElementById('amountInput');
@@ -527,7 +676,6 @@ export const carrerasModule = {
             startY = e.touches[0].clientY;
             currentY = startY;
             isSwiping = false;
-            sheet.style.transition = 'none';
         };
 
         const handleTouchMove = (e) => {
@@ -536,21 +684,24 @@ export const carrerasModule = {
             
             // Only consider it a swipe if it moved more than 5px
             if (diff > 5 && sheet.scrollTop <= 0) {
-                isSwiping = true;
+                if (!isSwiping) {
+                    isSwiping = true;
+                    sheet.style.transition = 'none';
+                }
                 sheet.style.transform = `translateY(${diff}px)`;
                 e.preventDefault(); // prevenir overscroll solo si estamos haciendo swipe intencional
             }
         };
 
         const handleTouchEnd = (e) => {
-            sheet.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
             if (!isSwiping) {
-                // Was just a tap, do nothing to transform and let the click event fire
-                sheet.style.transform = 'translateY(0)';
+                // Fue solo un tap, no alterar estilos para no abortar eventos click nativos
                 return;
             }
             
+            sheet.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
             const diff = currentY - startY;
+            
             if (diff > 100) { // Umbral para cerrar
                 window.carrerasModule.closeRidesBottomSheet();
                 setTimeout(() => {

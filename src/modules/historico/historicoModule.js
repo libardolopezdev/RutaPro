@@ -5,7 +5,7 @@ import { store } from '../../state/store.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { storageService } from '../../services/storageService.js';
 import { formatCurrency, getPlatformName } from '../../utils/format.js';
-import { showToast } from '../../utils/ui-utils.js';
+import { showToast, showConfirm } from '../../utils/ui-utils.js';
 
 export const historicoModule = {
     currentTab: 'historial',
@@ -52,6 +52,17 @@ export const historicoModule = {
     },
 
     async trashItem(id) {
+        const confirmed = await showConfirm({
+            title: 'Mover reporte a la papelera',
+            message: '¿Deseas mover este reporte a la papelera?<br><br>Podrás restaurarlo posteriormente desde la pestaña "Papelera".',
+            confirmText: 'Mover a papelera',
+            cancelText: 'Cancelar',
+            icon: '🗑',
+            confirmStyle: 'var(--ruby)'
+        });
+
+        if (!confirmed) return;
+
         const state = store.getState();
         if (state.user) {
             await firestoreService.moveToTrash(state.user.uid, id);
@@ -68,7 +79,16 @@ export const historicoModule = {
     },
 
     async deleteDefinitive(id) {
-        if (!confirm("¿Eliminar jornada para siempre? Esto no se puede deshacer.")) return;
+        const confirmed = await showConfirm({
+            title: 'Eliminar definitivamente',
+            message: '¿Eliminar jornada para siempre?<br><br><b>Esto no se puede deshacer.</b>',
+            confirmText: 'Eliminar',
+            cancelText: 'Cancelar',
+            icon: '⚠️',
+            confirmStyle: 'var(--ruby)'
+        });
+        if (!confirmed) return;
+
         const state = store.getState();
         if (state.user) {
             await firestoreService.hardDeleteHistorico(state.user.uid, id);
@@ -77,7 +97,16 @@ export const historicoModule = {
     },
 
     async deleteAllDefinitive() {
-        if (!confirm("¿Vaciar papelera? SE ELIMINARÁN TODAS LAS JORNADAS DEFINITIVAMENTE.")) return;
+        const confirmed = await showConfirm({
+            title: 'Vaciar papelera',
+            message: '¿Vaciar papelera?<br><br><b>SE ELIMINARÁN TODAS LAS JORNADAS DEFINITIVAMENTE.</b>',
+            confirmText: 'Vaciar todo',
+            cancelText: 'Cancelar',
+            icon: '🚨',
+            confirmStyle: 'var(--ruby)'
+        });
+        if (!confirmed) return;
+
         const state = store.getState();
         if (state.user) {
              const papelera = this.allData.filter(d => d.deletedAt);
@@ -178,50 +207,118 @@ export const historicoModule = {
         const totalNeto = item.ganancia !== undefined ? item.ganancia : (totalBruto - gastos.reduce((sum, g) => sum + (g.monto || 0), 0));
         const totalGastos = totalBruto - totalNeto;
 
-        let efectivo = 0;
-        let digital = 0;
-        carreras.forEach(c => {
-            if (c.payment === 'efectivo') efectivo += (c.neto || c.amount || 0);
-            else digital += (c.neto || c.amount || 0);
-        });
-        const efectivoReal = efectivo - totalGastos;
+        const METODOS_EFECTIVO = ['efectivo', 'cash'];
+        const porPlataforma = {};
+        let totalEfectivo = 0;
+        let totalDigital = 0;
 
-        let report = `🚗 *RUTAPRO — REPORTE DE JORNADA*\n`;
-        report += `📅 ${new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}\n`;
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `✅ Carreras: ${totalCarreras}\n`;
-        report += `💵 Total Bruto: ${formatCurrency(totalBruto)}\n`;
-        report += `📉 Gastos: ${formatCurrency(totalGastos)}\n`;
-        report += `💰 *Neto Total: ${formatCurrency(totalNeto)}*\n`;
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `💵 Efectivo (después gastos): ${formatCurrency(efectivoReal)}\n`;
-        report += `💳 Digital: ${formatCurrency(digital)}\n`;
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-
-        // Desglose por plataforma y método de pago ordenado descendente
-        report += `🎯 *DESGLOSE POR PLATAFORMA:*\n`;
-        const stats = {};
         carreras.forEach(c => {
-            const platform = c.platform || c.plataforma || '—';
-            const payment = c.payment || c.metodoPago || '—';
-            const key = `${platform}_${payment}`;
-            if (!stats[key]) {
-                stats[key] = { platform, payment, total: 0, count: 0 };
+            const nombre = getPlatformName(c.platform || c.plataforma || '—', state.settings?.plataformas || []).toUpperCase();
+            if (!porPlataforma[nombre]) {
+                porPlataforma[nombre] = { total: 0, carreras: 0, efectivo: 0, digital: 0 };
             }
-            stats[key].total += (c.neto || c.amount || 0);
-            stats[key].count++;
+            const monto = c.neto || c.amount || 0;
+            porPlataforma[nombre].total += monto;
+            porPlataforma[nombre].carreras += 1;
+
+            if (METODOS_EFECTIVO.includes((c.payment || c.metodoPago || '').toLowerCase())) {
+                totalEfectivo += monto;
+                porPlataforma[nombre].efectivo += monto;
+            } else {
+                totalDigital += monto;
+                porPlataforma[nombre].digital += monto;
+            }
         });
 
-        Object.values(stats)
-            .sort((a, b) => b.total - a.total)
-            .forEach(data => {
-                const name = getPlatformName(data.platform, state.settings?.plataformas || []);
-                const paymentName = data.payment ? data.payment.charAt(0).toUpperCase() + data.payment.slice(1) : 'Desconocido';
-                report += `  • ${name.toUpperCase()}: ${formatCurrency(data.total)} (${data.count} carrera${data.count === 1 ? '' : 's'}) | ${paymentName}\n`;
-            });
+        let report = `🚗 RUTAPRO — REPORTE DE JORNADA\n\n`;
+        
+        let fechaStr = new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        fechaStr = fechaStr.charAt(0).toUpperCase() + fechaStr.slice(1);
+        report += `📅 ${fechaStr}\n\n`;
+        
+        report += `💳 MEDIOS DE PAGO\n\n`;
+        report += `💵 Efectivo: ${formatCurrency(totalEfectivo)}\n`;
+        report += `💳 Digital: ${formatCurrency(totalDigital)}\n\n`;
+        
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
+        report += `📈 RESUMEN GENERAL\n\n`;
+        report += `🚖 Carreras: ${totalCarreras}\n\n`;
+        report += `💵 Ingreso bruto: ${formatCurrency(totalBruto)}\n\n`;
 
-        report += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-        report += `#RutaPro`;
+        if (totalGastos > 0) {
+            let porcentajeText = '';
+            if (totalBruto > 0) {
+                const pct = Math.round((totalGastos / totalBruto) * 100);
+                porcentajeText = ` (${pct}%)`;
+            }
+            report += `📉 Gastos: ${formatCurrency(totalGastos)}${porcentajeText}\n`;
+            
+            const gastosAgrupados = {};
+            gastos.forEach(g => {
+                const tipo = g.tipo || 'otro';
+                gastosAgrupados[tipo] = (gastosAgrupados[tipo] || 0) + (g.monto || 0);
+            });
+            const GASTOS_LABELS = {
+                combustible: '⛽ Gasolina',
+                comida: '🍔 Alimentación',
+                peaje: '🛣️ Peaje',
+                lavado: '🧽 Lavado',
+                comision: '📱 Comisión',
+                parqueadero: '🅿️ Parqueadero',
+                otro: '📝 Otro'
+            };
+            Object.entries(gastosAgrupados).forEach(([tipo, monto]) => {
+                if (monto > 0) {
+                    const label = GASTOS_LABELS[tipo] || ('📝 ' + tipo.charAt(0).toUpperCase() + tipo.slice(1));
+                    report += `   ${label.padEnd(19, '.')}${formatCurrency(monto)}\n`;
+                }
+            });
+            report += `\n`;
+        } else {
+            report += `📉 Gastos: $0\n\n`;
+        }
+
+        report += `💰 Ganancia neta: ${formatCurrency(totalNeto)}\n\n`;
+        
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        
+        const meta = state.settings?.meta || 0;
+        report += `🎯 META DEL DÍA\n\n`;
+        const diferencia = totalNeto - meta;
+        if (diferencia > 0) {
+            report += `🏆 Superaste la meta por ${formatCurrency(diferencia)}\n\n`;
+        } else if (diferencia === 0) {
+            report += `✅ Meta alcanzada\n\n`;
+        } else {
+            report += `📌 Faltaron ${formatCurrency(Math.abs(diferencia))}\n\n`;
+        }
+
+        report += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+        report += `📊 PLATAFORMAS\n\n`;
+        const plataformasOrdenadas = Object.entries(porPlataforma)
+            .sort((a, b) => b[1].total - a[1].total);
+
+        plataformasOrdenadas.forEach(([nombre, datos], index) => {
+            report += `${nombre}\n`;
+            report += `  ${formatCurrency(datos.total)} • ${datos.carreras} carrera${datos.carreras !== 1 ? 's' : ''}\n`;
+            
+            let splitText = [];
+            if (datos.efectivo > 0) splitText.push(`💵 Efectivo: ${formatCurrency(datos.efectivo)}`);
+            if (datos.digital > 0) splitText.push(`💳 Digital: ${formatCurrency(datos.digital)}`);
+            
+            if (splitText.length > 0) {
+                report += `  ${splitText.join(' | ')}\n`;
+            }
+            
+            if (index < plataformasOrdenadas.length - 1) {
+                report += `\n`;
+            }
+        });
+
+        report += `\n━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+        report += `Generado con RutaPro`;
 
         this.shareText(report);
     },
@@ -232,7 +329,7 @@ export const historicoModule = {
                 title: 'Reporte RutaPro',
                 text: text
             }).catch((e) => {
-                console.error('Error usando navigator.share:', e);
+                // console.error('Error usando navigator.share:', e);
                 if (e.name !== 'AbortError') {
                     this.shareViaWhatsApp(text);
                 }
@@ -272,7 +369,7 @@ export const historicoModule = {
             document.execCommand('copy');
             showToast('Reporte copiado al portapapeles', 'success');
         } catch (err) {
-            console.error('Fallback copy failed', err);
+            // console.error('Fallback copy failed', err);
             showToast('Error al copiar el reporte', 'error');
         }
         document.body.removeChild(textArea);

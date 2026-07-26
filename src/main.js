@@ -52,6 +52,8 @@ async function initApp() {
     // Initialize modules
     authModule.init();
     notificationsModule.init();
+    gastosModule.init();
+    settingsModule.initAutocomplete();
     
     // Make onboardingModule globally accessible so authModule can initialize it
     window.onboardingModule = onboardingModule;
@@ -259,18 +261,15 @@ function setupEventListeners() {
         }
     });
 
-    // ── Gasto (con haptics + shake) ──
     bind('agregarGasto', 'click', () => {
         const monto = parseFloat(document.getElementById('gastoMonto').value.replace(/\D/g, ''));
-        const tipo = document.getElementById('gastoTipo').value;
-        if (monto && monto > 0 && tipo) {
+        if (monto && monto > 0) {
             if (monto > 5000000) {
                 alert('El monto del gasto excede el límite permitido.');
                 return;
             }
-            gastosModule.addGasto(monto, tipo);
+            gastosModule.addGasto(monto);
             document.getElementById('gastoMonto').value = '';
-            document.getElementById('gastoTipo').value = '';
             haptics.lightImpact();
             shakeElement(document.getElementById('btnRegistrarGastoFAB'));
             shakeElement(document.getElementById('jmBtnGasto'));
@@ -282,7 +281,12 @@ function setupEventListeners() {
         const value = e.target.value.replace(/\D/g, '');
         if (value) e.target.value = new Intl.NumberFormat('es-CO').format(value);
         // Trigger button validation real-time
-        renderer.updateAddButton(store.getState());
+        if (e.target.id === 'amountInput') {
+            carrerasModule.updateAddButtonLocal();
+        }
+        if (e.target.id === 'gastoMonto') {
+            gastosModule.updateAddButtonLocal();
+        }
     };
     bind('amountInput', 'input', formatInput);
     bind('gastoMonto', 'input', formatInput);

@@ -6,34 +6,89 @@ import { storageService } from '../../services/storageService.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { formatCurrency, getPlatformName, normalizePlatform, renderAvatarPlataforma, getColorOficial, getColorPlataforma, normalizarNombre, escapeHTML } from '../../utils/format.js';
 
-/**
- * Prioridad de color para barras: catálogo oficial > color del usuario (custom) > fallback
- */
+// ============================================================================
+// CONSTANTES Y CONFIGURACIÓN
+// ============================================================================
+const COLORS = {
+    EXCELENTE: 'var(--emerald)',
+    ATENCION: 'var(--gold)',
+    ALTO: 'var(--ruby)',
+    TRANSPARENTE: 'transparent',
+    EFECTIVO: '#10B981',
+    DIGITAL: '#3B82F6',
+    FALLBACK: '#6B7280'
+};
+
+const THRESHOLDS = {
+    GASTOS_ATENCION: 20,
+    GASTOS_ALTO: 35
+};
+
+const EMOJIS_GASTOS = { combustible: '⛽', comida: '🍔', peaje: '🛣️', lavado: '🧽', comision: '💸', otro: '📋' };
+
+let gananciasChartInstance = null;
+
+// ============================================================================
+// HELPERS PRIVADOS
+// ============================================================================
 function getColorBarra(norm, settingsPlatforms = []) {
-    // 1. Catálogo oficial — siempre gana para plataformas conocidas
     const oficial = getColorOficial(norm.name);
     if (oficial) return oficial;
 
-    // 2. Color del usuario — solo para plataformas custom
     const activa = settingsPlatforms.find(p =>
         p.id === norm.id ||
         normalizarNombre(p.name) === normalizarNombre(norm.name)
     );
-    if (activa?.color && activa.color !== '#00E676' && activa.color !== '#6B7280') {
+    if (activa?.color && activa.color !== '#00E676' && activa.color !== COLORS.FALLBACK) {
         return activa.color;
     }
 
-    // 3. Fallback
-    if (norm.color && norm.color !== '#6B7280') return norm.color;
-    return '#6B7280';
+    if (norm.color && norm.color !== COLORS.FALLBACK) return norm.color;
+    return COLORS.FALLBACK;
 }
 
-let gananciasChartInstance = null;
-let mediosPagoChartInstance = null;
+function renderHtmlPrItem(st, pctFill, pctStr, isBest, avatarHtml, colorBarra, colorSeguro) {
+    return `
+        <div class="pr-item-premium">
+            <div class="pr-header-premium">
+                <div class="pr-brand">
+                    ${avatarHtml}
+                    <div class="pr-name-container">
+                        <span class="pr-name" style="color:${colorSeguro}">${escapeHTML(st.name)}</span>
+                        ${isBest ? '<span class="pr-badge-rentable">🥇 Más rentable</span>' : ''}
+                    </div>
+                </div>
+                <span class="pr-amount-premium">${formatCurrency(st.total)}</span>
+            </div>
+            <div class="pr-bar-bg-premium">
+                <div class="pr-bar-fill-premium" style="width: ${pctFill}%; background: ${colorBarra}"></div>
+            </div>
+            <div class="pr-footer-premium">
+                <div class="pr-footer-stat">
+                    <span class="pr-stat-val">${pctStr}%</span>
+                    <span class="pr-stat-lbl">del total</span>
+                </div>
+                <div class="pr-footer-stat" style="align-items: center;">
+                    <span class="pr-stat-val">${st.count}</span>
+                    <span class="pr-stat-lbl">carreras</span>
+                </div>
+                <div class="pr-footer-stat" style="align-items: flex-end;">
+                    <span class="pr-stat-val">${st.prom > 0 ? formatCurrency(st.prom) : '—'}</span>
+                    <span class="pr-stat-lbl">promedio</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
+// ============================================================================
+// MÓDULO PRINCIPAL
+// ============================================================================
 export const estadisticasModule = {
+    // ESTADO
     _rawData: [],
     _currentPeriod: '7',
+    _renderGeneration: 0,
 
     async open() {
         document.getElementById('statsModal').style.display = 'flex';
@@ -42,10 +97,8 @@ export const estadisticasModule = {
     },
 
     bindEvents() {
-        // Tabs de periodo
         const tabs = document.querySelectorAll('.stats-tab');
         tabs.forEach(tab => {
-            // Eliminar listeners previos para evitar duplicados al recargar
             const newTab = tab.cloneNode(true);
             tab.parentNode.replaceChild(newTab, tab);
             newTab.addEventListener('click', (e) => {
@@ -61,11 +114,11 @@ export const estadisticasModule = {
         const state = store.getState();
         if (state.user) {
             try {
-                const { data } = await firestoreService.getHistorico(state.user.uid);
+                const { data } = await firestoreService.getHistoricoParaEstadisticas(state.user.uid);
                 this._rawData = data || [];
                 storageService.saveHistorico(this._rawData);
             } catch (e) {
-                console.warn('Cargando local por error de red en estadísticas', e);
+                // console.warn('Cargando local por error de red en estadísticas', e);
                 this._rawData = storageService.loadHistorico() || [];
             }
         } else {
@@ -84,7 +137,12 @@ export const estadisticasModule = {
         return this._rawData.filter(j => new Date(j.fecha).getTime() >= cutoffTime);
     },
 
+    // ============================================================================
+    // RENDER PRINCIPAL
+    // ============================================================================
     render() {
+        this._renderGeneration++;
+        const currentGeneration = this._renderGeneration;
         const data = this.filterDataByPeriod();
 
         if (data.length === 0) {
@@ -96,69 +154,54 @@ export const estadisticasModule = {
         document.getElementById('statsContent').style.display = 'flex';
         document.getElementById('statsEmptyState').style.display = 'none';
 
-        this.renderResumen(data);
-        this.renderHourlyPerf(data);
-        this.renderPlatformRanking(data);
-        this.renderExpensesControl(data);
-        this.renderGoals(data);
+        const aggregates = this._calculateAggregates(data);
 
-        // Chart.js must be rendered small delay in modals to get proper sizing
-        setTimeout(() => {
-            this.renderEarningsChart(data);
-            this.renderPaymentSplitChart(data);
-        }, 50);
+        this._renderNivel1_Resumen(aggregates);
+        this._renderNivel2_PlatformRanking(data, currentGeneration);
+        this._renderNivel3_SaludFinanciera(data);
+        this._renderNivel4_Contexto(data, aggregates, currentGeneration);
     },
 
-    renderResumen(data) {
+    // ============================================================================
+    // CÁLCULOS CENTRALIZADOS
+    // ============================================================================
+    _calculateAggregates(data) {
         let netoTotal = 0;
         let carrerasTotal = 0;
         let mejorDia = 0;
+        let peorDia = Infinity;
 
         data.forEach(j => {
-            netoTotal += j.ganancia || 0;
+            const ganancia = j.ganancia || 0;
+            netoTotal += ganancia;
             carrerasTotal += j.totalCarreras || 0;
-            if (j.ganancia > mejorDia) mejorDia = j.ganancia;
+            if (ganancia > mejorDia) mejorDia = ganancia;
+            if (ganancia < peorDia) peorDia = ganancia;
         });
 
-        document.getElementById('stNetoTotal').textContent = formatCurrency(netoTotal);
-        document.getElementById('stJornadasTotal').textContent = data.length;
-        document.getElementById('stCarrerasTotal').textContent = carrerasTotal;
-        document.getElementById('stMejorDia').textContent = formatCurrency(mejorDia);
+        if (peorDia === Infinity) peorDia = 0;
+
+        const jornadasTrabajadas = data.length;
+        const promJornada = jornadasTrabajadas > 0 ? netoTotal / jornadasTrabajadas : 0;
+        const promCarrera = carrerasTotal > 0 ? netoTotal / carrerasTotal : 0;
+        const carrerasJornada = jornadasTrabajadas > 0 ? carrerasTotal / jornadasTrabajadas : 0;
+
+        return { netoTotal, carrerasTotal, mejorDia, peorDia, jornadasTrabajadas, promJornada, promCarrera, carrerasJornada };
     },
 
-    renderHourlyPerf(data) {
-        let totalHoras = 0;
-        let netoTotal = 0;
-
-        data.forEach(j => {
-            netoTotal += j.ganancia || 0;
-            let durationMs = 0;
-            // Infer duration: Use jornadaInicio if added in future, or infer from first carrera vs end (fecha)
-            if (j.jornadaInicio) {
-                durationMs = new Date(j.fecha).getTime() - new Date(j.jornadaInicio).getTime();
-            } else if (j.carrerasDesglose && j.carrerasDesglose.length > 0) {
-                const first = new Date(j.carrerasDesglose[0].timestamp).getTime();
-                const last = new Date(j.fecha).getTime();
-                durationMs = last - first;
-            }
-            
-            // Si la duración parece irreal (menor a 1 min o mayor a 24 hrs asumimos 0 para no distorsionar en historiales dañados)
-            if (durationMs > 0 && durationMs < (24 * 60 * 60 * 1000)) {
-                totalHoras += (durationMs / (1000 * 60 * 60));
-            }
-        });
-
-        if (totalHoras > 0) {
-            const promHora = netoTotal / totalHoras;
-            document.getElementById('stPromedioHora').textContent = formatCurrency(promHora);
-            document.getElementById('stHorasTotales').textContent = totalHoras.toFixed(1);
-        } else {
-            document.getElementById('stPromedioHora').textContent = '$0';
-            document.getElementById('stHorasTotales').textContent = '0';
-        }
+    // ============================================================================
+    // NIVEL 1: RESUMEN FINANCIERO
+    // ============================================================================
+    _renderNivel1_Resumen(agg) {
+        document.getElementById('stNetoTotal').textContent = formatCurrency(agg.netoTotal);
+        document.getElementById('stPromedioJornada').textContent = formatCurrency(agg.promJornada);
+        document.getElementById('stPromedioCarrera').textContent = formatCurrency(agg.promCarrera);
     },
 
-    async renderPlatformRanking(data) {
+    // ============================================================================
+    // NIVEL 2: RANKING DE PLATAFORMAS
+    // ============================================================================
+    async _renderNivel2_PlatformRanking(data, currentGeneration) {
         const state = store.getState();
         const platStats = {};
         const uniquePlatforms = new Set();
@@ -186,54 +229,43 @@ export const estadisticasModule = {
         
         const sorted = Object.entries(platStats).sort((a, b) => b[1].total - a[1].total);
         if (sorted.length === 0) {
-            document.getElementById('stPlatformRanking').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Sin datos de plataforma</div>';
+            document.getElementById('stPlatformRanking').innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:20px;">No hay datos suficientes</div>';
             return;
         }
 
-        const maxMonto = sorted[0][1].total;
+        const totalIngresosPlataformas = sorted.reduce((sum, [, st]) => sum + st.total, 0);
         
         let bestPromedioId = sorted[0][0];
-        let bestPromedioVal = 0;
+        let bestPromedioVal = -1;
         sorted.forEach(([id, st]) => {
-            if (st.count > 0 && (st.total/st.count) > bestPromedioVal && st.count >= 3) {
-                bestPromedioVal = st.total/st.count;
+            st.prom = st.count > 0 ? (st.total / st.count) : 0;
+            if (st.prom > bestPromedioVal) {
+                bestPromedioVal = st.prom;
                 bestPromedioId = id;
             }
         });
 
-        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-        document.getElementById('stPlatformRanking').innerHTML = (await Promise.all(sorted.map(async ([id, st]) => {
-            const prom = st.count > 0 ? (st.total / st.count) : 0;
-            const pctFill = (st.total / maxMonto) * 100;
+        const htmlContent = (await Promise.all(sorted.map(async ([id, st]) => {
+            const pctFill = totalIngresosPlataformas > 0 ? (st.total / totalIngresosPlataformas) * 100 : 0;
+            const pctStr = totalIngresosPlataformas > 0 ? Math.round(pctFill) : 100;
             const isBest = id === bestPromedioId;
             const normMinimal = { name: st.name.replace(' (Inactiva)', ''), color: st.color };
             const avatarHtml = await renderAvatarPlataforma(normMinimal);
             const colorBarra = getColorBarra({ id, name: normMinimal.name, color: st.color }, state.settings.plataformas);
             const colorSeguro = getColorPlataforma(normMinimal.name, colorBarra);
 
-            return `
-                <div class="pr-item">
-                    <div class="pr-header" style="display:flex; align-items:center; gap:8px;">
-                        ${avatarHtml}
-                        <span class="pr-name" style="color:${colorSeguro}">
-                            ${escapeHTML(st.name)} 
-                            ${isBest ? '<span class="pr-badge">⭐ Más rentable</span>' : ''}
-                        </span>
-                        <span class="pr-amount" style="margin-left:auto;">${formatCurrency(st.total)}</span>
-                    </div>
-                    <div class="pr-sub">
-                        <span>${st.count} carreras</span>
-                        <span>Prom: ${formatCurrency(prom)}/viaje</span>
-                    </div>
-                    <div class="pr-bar-bg">
-                        <div class="pr-bar-fill" style="width: ${pctFill}%; background: ${colorBarra}"></div>
-                    </div>
-                </div>
-            `;
+            return renderHtmlPrItem(st, pctFill, pctStr, isBest, avatarHtml, colorBarra, colorSeguro);
         }))).join('');
+
+        if (this._renderGeneration !== currentGeneration) return;
+
+        document.getElementById('stPlatformRanking').innerHTML = htmlContent;
     },
 
-    renderExpensesControl(data) {
+    // ============================================================================
+    // NIVEL 3: SALUD FINANCIERA
+    // ============================================================================
+    _renderNivel3_SaludFinanciera(data) {
         let brutoTotal = 0;
         let gastosTotal = 0;
         const tipoStats = {};
@@ -249,82 +281,141 @@ export const estadisticasModule = {
             }
         });
 
-        const pct = brutoTotal > 0 ? ((gastosTotal / brutoTotal) * 100).toFixed(1) : 0;
-        document.getElementById('stGastoPct').textContent = `${pct}%`;
-        document.getElementById('stGastoTotal').textContent = formatCurrency(gastosTotal);
+        const pct = brutoTotal > 0 ? Math.round((gastosTotal / brutoTotal) * 100) : 0;
+        const pctStr = brutoTotal > 0 ? `${pct}%` : '—';
+        const barraWidth = Math.min(pct, 100);
+
+        const elIngresos = document.getElementById('stFhIngresos');
+        if (elIngresos) elIngresos.textContent = formatCurrency(brutoTotal);
+        
+        document.getElementById('stFhGastos').textContent = formatCurrency(gastosTotal);
+        document.getElementById('stFhImpactoPct').textContent = pctStr;
+        
+        const elBar = document.getElementById('stFhImpactoBar');
+        elBar.style.width = `${barraWidth}%`;
+
+        // Update hidden IDs for backward compatibility
+        const elGastoPct = document.getElementById('stGastoPct');
+        const elGastoTotal = document.getElementById('stGastoTotal');
+        if (elGastoPct) elGastoPct.textContent = pctStr;
+        if (elGastoTotal) elGastoTotal.textContent = formatCurrency(gastosTotal);
 
         const sortedGastos = Object.entries(tipoStats).sort((a, b) => b[1] - a[1]);
-        const emojis = { combustible: '⛽', comida: '🍔', peaje: '🛣️', lavado: '🧽', comision: '💸', otro: '📋' };
-
+        const elMayorGasto = document.getElementById('stFhMayorGasto');
+        
         if (sortedGastos.length === 0) {
-            document.getElementById('stGastosBreakdown').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Sin gastos registrados</div>';
-            return;
+            elMayorGasto.innerHTML = '<span class="fh-major-name" style="color:var(--text-muted); font-weight:normal;">No se registraron gastos.</span><span class="fh-major-val"></span>';
+        } else {
+            const [tipo, val] = sortedGastos[0];
+            const icon = EMOJIS_GASTOS[tipo] || '📋';
+            const name = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+            elMayorGasto.innerHTML = `
+                <span class="fh-major-name">${icon} ${escapeHTML(name)}</span>
+                <span class="fh-major-val">${formatCurrency(val)}</span>
+            `;
         }
 
-        const maxGasto = sortedGastos[0][1];
-        
-        document.getElementById('stGastosBreakdown').innerHTML = sortedGastos.map(([tipo, val]) => {
-            const fillPct = (val / maxGasto) * 100;
-            const icon = emojis[tipo] || '📋';
-            const name = tipo.charAt(0).toUpperCase() + tipo.slice(1);
-            return `
-                <div class="eb-item">
-                    <div class="eb-icon">${icon}</div>
-                    <div class="eb-details">
-                        <div class="eb-top">
-                            <span>${escapeHTML(name)}</span>
-                            <span style="font-family:'JetBrains Mono';">${formatCurrency(val)}</span>
-                        </div>
-                        <div class="eb-bar-bg">
-                            <div class="eb-bar-fill" style="width: ${fillPct}%;"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        const elStatusBox = document.getElementById('stFhStatusBox');
+        const elStatusTitle = document.getElementById('stFhStatusTitle');
+        const elStatusDesc = document.getElementById('stFhStatusDesc');
+
+        if (brutoTotal === 0 && gastosTotal === 0) {
+            elStatusBox.style.borderLeftColor = COLORS.TRANSPARENTE;
+            elBar.style.backgroundColor = COLORS.TRANSPARENTE;
+            elStatusTitle.textContent = 'Sin datos';
+            elStatusDesc.textContent = 'No hay actividad financiera registrada en este período.';
+        } else if (pct < THRESHOLDS.GASTOS_ATENCION) {
+            elStatusBox.style.borderLeftColor = COLORS.EXCELENTE;
+            elBar.style.backgroundColor = COLORS.EXCELENTE;
+            elStatusTitle.textContent = '🟢 Excelente';
+            elStatusDesc.textContent = `Conservaste el ${100 - pct}% de tus ingresos.`;
+        } else if (pct <= THRESHOLDS.GASTOS_ALTO) {
+            elStatusBox.style.borderLeftColor = COLORS.ATENCION;
+            elBar.style.backgroundColor = COLORS.ATENCION;
+            elStatusTitle.textContent = '🟡 Atención';
+            elStatusDesc.textContent = `Los gastos ya representan el ${pct}% de tus ingresos.`;
+        } else {
+            elStatusBox.style.borderLeftColor = COLORS.ALTO;
+            elBar.style.backgroundColor = COLORS.ALTO;
+            elStatusTitle.textContent = '🔴 Alto';
+            elStatusDesc.textContent = 'Tus costos están reduciendo significativamente tu rentabilidad.';
+        }
     },
 
-    renderGoals(data) {
-        const state = store.getState();
-        const metaActual = state.settings.meta || 270000;
-        let superadas = 0;
-        let totalGananciaMesProgreso = 0;
+    // ============================================================================
+    // NIVEL 4: CONTEXTO Y ACTIVIDAD
+    // ============================================================================
+    _renderNivel4_Contexto(data, agg, currentGeneration) {
+        document.getElementById('stJornadasTotal').textContent = agg.jornadasTrabajadas;
+        document.getElementById('stCarrerasTotal').textContent = agg.carrerasTotal;
+        document.getElementById('stMejorDia').textContent = formatCurrency(agg.mejorDia);
         
+        const elRango = document.getElementById('stRangoHabitual');
+        if (elRango) elRango.textContent = `${formatCurrency(agg.peorDia)} - ${formatCurrency(agg.mejorDia)}`;
+
+        const elPeorDia = document.getElementById('stPeorDia'); // Oculto / Legacy
+        if (elPeorDia) elPeorDia.textContent = formatCurrency(agg.peorDia);
+        
+        const elVariacion = document.getElementById('stVariacionDia'); // Oculto / Legacy
+        if (elVariacion) elVariacion.textContent = formatCurrency(agg.mejorDia - agg.peorDia);
+
+        const elCarrerasJornada = document.getElementById('stCarrerasJornada'); // Oculto / Legacy
+        if (elCarrerasJornada) elCarrerasJornada.textContent = agg.carrerasJornada.toFixed(1);
+
+        this._renderPaymentMethods(data);
+
+        setTimeout(() => {
+            if (this._renderGeneration !== currentGeneration) return;
+            this._renderEarningsChart(data);
+        }, 50);
+    },
+
+    _renderPaymentMethods(data) {
+        let efe = 0;
+        let dig = 0;
+
         data.forEach(j => {
-            if ((j.ganancia || 0) >= metaActual) superadas++;
-            totalGananciaMesProgreso += (j.ganancia || 0);
+            if (j.carrerasDesglose) {
+                j.carrerasDesglose.forEach(c => {
+                    if (c.payment === 'efectivo') {
+                        efe += (c.neto || c.amount);
+                    } else {
+                        dig += (c.neto || c.amount);
+                    }
+                });
+            }
         });
 
-        const pct = data.length > 0 ? Math.round((superadas / data.length) * 100) : 0;
-        document.getElementById('stMetasLogradas').textContent = `${pct}%`;
+        const total = efe + dig;
+        const pEfe = total > 0 ? Math.round((efe/total)*100) : 0;
+        const pDig = total > 0 ? Math.round((dig/total)*100) : 0;
 
-        // Proyección simple lineal según period
-        const daysInPeriod = this._currentPeriod === 'all' ? 30 : parseInt(this._currentPeriod);
-        const promDiario = totalGananciaMesProgreso / (data.length || 1);
-        const projection = promDiario * 30; // proyector de mes de 30 dias de trabajo
+        const legendContainer = document.getElementById('stPaymentSplitLegend');
+        if (legendContainer) {
+            legendContainer.innerHTML = `
+                <div class="cb-pay-row">
+                    <span class="cb-pay-lbl">💵 Efectivo <span class="cb-pay-pct">${pEfe}%</span></span>
+                    <div class="cb-pay-bar"><div class="cb-pay-fill" style="width:${pEfe}%; background:${COLORS.EFECTIVO};"></div></div>
+                </div>
+                <div class="cb-pay-row">
+                    <span class="cb-pay-lbl">💳 Digital <span class="cb-pay-pct">${pDig}%</span></span>
+                    <div class="cb-pay-bar"><div class="cb-pay-fill" style="width:${pDig}%; background:${COLORS.DIGITAL};"></div></div>
+                </div>
+            `;
+        }
+
+        const ctx = document.getElementById('metodosPagoChart');
+        if (ctx && ctx.parentElement) {
+            ctx.parentElement.style.display = 'none';
+        }
         
-        document.getElementById('stProyeccionMes').textContent = formatCurrency(projection);
-
-        const motivador = document.getElementById('stMotivador');
-        if (pct >= 80) {
-            motivador.textContent = '¡Rendimiento impecable! Estás destruyendo tus metas.';
-            motivador.style.color = 'var(--emerald)';
-            motivador.style.borderColor = 'rgba(16,185,129,0.3)';
-            motivador.style.background = 'rgba(16,185,129,0.08)';
-        } else if (pct >= 50) {
-            motivador.textContent = 'Buen ritmo. Intenta optimizar tus rutas para superar la meta más seguido.';
-            motivador.style.color = 'var(--gold)';
-            motivador.style.borderColor = 'rgba(234,179,8,0.3)';
-            motivador.style.background = 'rgba(234,179,8,0.08)';
-        } else {
-            motivador.textContent = 'Mes desafiante. Analiza qué plataformas te rinden más y replantea horarios.';
-            motivador.style.color = '#f87171';
-            motivador.style.borderColor = 'rgba(239,68,68,0.3)';
-            motivador.style.background = 'rgba(239,68,68,0.08)';
+        if (typeof window.mediosPagoChartInstance !== 'undefined' && window.mediosPagoChartInstance) {
+            window.mediosPagoChartInstance.destroy();
+            window.mediosPagoChartInstance = null;
         }
     },
 
-    renderEarningsChart(data) {
+    _renderEarningsChart(data) {
         const ctx = document.getElementById('gananciasChart');
         if (!ctx) return;
         
@@ -332,7 +423,6 @@ export const estadisticasModule = {
             gananciasChartInstance.destroy();
         }
 
-        // Preparar data cronológica (de más antiguo a más reciente)
         const sorted = [...data].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
         const labels = sorted.map(d => {
             const dt = new Date(d.fecha);
@@ -340,11 +430,8 @@ export const estadisticasModule = {
         });
         const values = sorted.map(d => d.ganancia || 0);
 
-        const sum = values.reduce((a,b) => a+b, 0);
-        const avg = values.length > 0 ? (sum/values.length) : 0;
         const maxVal = Math.max(...values, 100);
-
-        const chartColors = values.map(v => v === Math.max(...values) ? '#10B981' : 'rgba(16, 185, 129, 0.3)');
+        const chartColors = values.map(v => v === Math.max(...values) ? COLORS.EFECTIVO : 'rgba(16, 185, 129, 0.3)');
 
         if (window.Chart) {
             gananciasChartInstance = new window.Chart(ctx, {
@@ -378,74 +465,6 @@ export const estadisticasModule = {
                         x: {
                             grid: { display: false },
                             ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } }
-                        }
-                    }
-                }
-            });
-        }
-    },
-
-    renderPaymentSplitChart(data) {
-        let efe = 0;
-        let dig = 0;
-
-        data.forEach(j => {
-            if (j.carrerasDesglose) {
-                j.carrerasDesglose.forEach(c => {
-                    if (c.payment === 'efectivo') {
-                        efe += (c.neto || c.amount);
-                    } else {
-                        dig += (c.neto || c.amount);
-                    }
-                });
-            }
-        });
-
-        const total = efe + dig;
-        const pEfe = total > 0 ? Math.round((efe/total)*100) : 0;
-        const pDig = total > 0 ? Math.round((dig/total)*100) : 0;
-
-        // Render legends
-        document.getElementById('stPaymentSplitLegend').innerHTML = `
-            <div class="ps-legend-item">
-                <div class="ps-title"><div class="ps-dot" style="background:#10B981;"></div> Efectivo</div>
-                <div class="ps-amount">${formatCurrency(efe)}</div>
-                <div class="ps-pct">${pEfe}%</div>
-            </div>
-            <div class="ps-legend-item">
-                <div class="ps-title"><div class="ps-dot" style="background:#3B82F6;"></div> Digital</div>
-                <div class="ps-amount">${formatCurrency(dig)}</div>
-                <div class="ps-pct">${pDig}%</div>
-            </div>
-        `;
-
-        const ctx = document.getElementById('metodosPagoChart');
-        if (!ctx) return;
-        
-        if (mediosPagoChartInstance) {
-            mediosPagoChartInstance.destroy();
-        }
-
-        if (window.Chart) {
-            mediosPagoChartInstance = new window.Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Efectivo', 'Digital'],
-                    datasets: [{
-                        data: [efe, dig],
-                        backgroundColor: ['#10B981', '#3B82F6'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: { label: (ctx) => formatCurrency(ctx.raw) }
                         }
                     }
                 }

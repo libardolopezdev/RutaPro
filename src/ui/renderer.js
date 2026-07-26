@@ -3,26 +3,26 @@ import { updateGreeting } from '../utils/greeting.js';
 
 /**
  * Prioridad de color para barras y porcentajes:
- * 1. Color oficial del catálogo (máxima prioridad — anula cualquier color guardado por canvas)
- * 2. Color configurado por el usuario (solo para plataformas custom no reconocidas)
- * 3. Fallback verde
+ * 1. Color personalizado del usuario (si la plataforma está activa y tiene un color no genérico)
+ * 2. Color oficial del catálogo (fallback para plataformas sin color personalizado)
+ * 3. Fallback gris neutro
  */
 function getColorBarra(norm, settingsPlatforms = []) {
-    // 1. Catálogo oficial — siempre gana para plataformas conocidas
-    const oficial = getColorOficial(norm.name);
-    if (oficial) return oficial;
-
-    // 2. Color del usuario — solo para plataformas custom
+    // 1. Color del usuario — tiene prioridad máxima si existe y no es el genérico
     const activa = settingsPlatforms.find(p =>
         p.id === norm.id ||
         normalizarNombre(p.name) === normalizarNombre(norm.name)
     );
-    if (activa?.color && activa.color !== '#00E676' && activa.color !== '#6B7280') {
+    if (activa?.color && activa.color !== '#00E676' && activa.color !== '#6B7280' && activa.color !== '#6b7280') {
         return activa.color;
     }
 
+    // 2. Color oficial del catálogo
+    const oficial = getColorOficial(norm.name);
+    if (oficial) return oficial;
+
     // 3. Fallback
-    if (norm.color && norm.color !== '#6B7280') return norm.color;
+    if (norm.color && norm.color !== '#6B7280' && norm.color !== '#6b7280') return norm.color;
     return '#6B7280';
 }
 const elements = {
@@ -59,6 +59,14 @@ const elements = {
 
 export const renderer = {
     render(state) {
+        const appContainer = document.querySelector('.app-container');
+        if (appContainer) {
+            if (state.isSyncing) {
+                appContainer.classList.add('app-syncing');
+            } else {
+                appContainer.classList.remove('app-syncing');
+            }
+        }
         this.updateDate();
         this.updateUserHeader(state);
         this.updateMetaProgress(state);
@@ -68,9 +76,7 @@ export const renderer = {
         this.updateSummary(state);
         this.updateCarrerasList(state);
         this.updateGastosList(state);
-        this.updateAddButton(state);
         this.updateRenderPlatformButtons(state);
-        this.updatePaymentButtons(state);
         updateGreeting(state);
     },
 
@@ -89,7 +95,7 @@ export const renderer = {
 
         let name = 'Usuario';
         if (state.user && state.user.displayName) {
-            name = state.user.displayName;
+            name = state.user.displayName.trim().split(' ')[0] || 'Usuario';
         } else if (state.user && state.user.email) {
             name = state.user.email.split('@')[0];
         }
@@ -136,65 +142,33 @@ export const renderer = {
     updateRenderPlatformButtons(state) {
         const container = elements.platformButtonsContainer;
         if (!container) return;
+        
+        // Skip rebuilding if they already exist, to preserve inline styles from carrerasModule
+        if (container.children.length > 0) return;
+        
         container.innerHTML = '';
         const plataformas = state.settings.plataformas || [];
+        
         plataformas.forEach((plat, index) => {
             const btn = document.createElement('div');
-            btn.className = `p-chip ${state.selectedPlatform === plat.id ? 'active' : ''}`;
+            btn.className = 'p-chip';
             btn.dataset.platform = plat.id;
             btn.innerHTML = `<span>${escapeHTML(plat.name)}</span>`;
 
-            // Si es el ltimo item y el total es impar, ocupa 2 columnas
             if (index === plataformas.length - 1 && plataformas.length % 2 !== 0) {
                 btn.style.gridColumn = 'span 2';
             }
 
-            const isUber = plat.id === 'uber';
-            const pColor = isUber ? 'var(--uber-color)' : plat.color;
-            const pGlow = isUber ? 'var(--uber-glow)' : `${plat.color}44`;
-            const pBg = isUber ? 'var(--uber-bg)' : `${plat.color}22`;
-
-            if (state.selectedPlatform === plat.id) {
-                btn.style.borderColor = pColor;
-                btn.style.boxShadow = `0 0 15px ${pGlow}`;
-                btn.style.color = 'var(--text-primary)';
-                btn.style.background = pBg;
-            } else {
-                btn.style.borderColor = 'var(--border-glass)';
-                btn.style.color = 'var(--text-secondary)';
-                btn.style.background = 'var(--surface-glass)';
-            }
+            btn.style.borderColor = 'var(--border-glass)';
+            btn.style.color = 'var(--text-secondary)';
+            btn.style.background = 'var(--surface-glass)';
+            
             container.appendChild(btn);
         });
     },
 
     updatePaymentButtons(state) {
-        if (!elements.paymentButtons) return;
-
-        const paymentColors = {
-            efectivo: { color: 'var(--emerald)', glow: 'var(--emerald-glow)' },
-            tarjeta: { color: 'var(--blue)', glow: 'var(--blue-glow)' },
-            vale: { color: 'var(--gold)', glow: 'var(--gold-glow)' },
-            transferencia: { color: 'var(--cyan)', glow: 'var(--cyan-glow)' }
-        };
-
-        const buttons = elements.paymentButtons.querySelectorAll('[data-payment]');
-        buttons.forEach(btn => {
-            const type = btn.dataset.payment;
-            const theme = paymentColors[type] || { color: 'var(--emerald)', glow: 'var(--emerald-glow)' };
-
-            if (state.selectedPayment === type) {
-                btn.classList.add('active');
-                btn.style.borderColor = theme.color;
-                btn.style.color = theme.color;
-                btn.style.background = theme.glow;
-            } else {
-                btn.classList.remove('active');
-                btn.style.borderColor = 'var(--border-glass)';
-                btn.style.color = 'var(--text-secondary)';
-                btn.style.background = 'var(--surface-glass)';
-            }
-        });
+        // Obsoleto: La responsabilidad visual de los pagos ahora reside en carrerasModule.js
     },
 
     updateMetaProgress(state) {
@@ -540,23 +514,6 @@ export const renderer = {
     },
 
     updateAddButton(state) {
-        if (!elements.addCarrera) return;
-
-        const amountValue = elements.amountInput ? parseFloat(elements.amountInput.value.replace(/\D/g, '')) : 0;
-        let canAdd = false;
-        let label = 'REGISTRAR';
-
-        if (!amountValue || amountValue <= 0) {
-            label = 'INDIQUE VALOR';
-        } else if (!state.selectedPlatform) {
-            label = 'ELIJA PLATAFORMA';
-        } else if (!state.selectedPayment) {
-            label = 'ELIJA PAGO';
-        } else {
-            canAdd = true;
-        }
-
-        elements.addCarrera.disabled = !canAdd;
-        elements.addCarrera.textContent = label;
+        // Obsoleto: La responsabilidad visual del botón Add reside ahora en carrerasModule.js
     }
 };

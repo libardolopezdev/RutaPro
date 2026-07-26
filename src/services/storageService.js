@@ -14,7 +14,9 @@ export const storageService = {
 
     saveState(state) {
         try {
-            const { user, isOnline, ...persistableState } = state;
+            // RP-001 v2: sync es estado de runtime, no de sesión — se excluye de la persistencia
+            // RP-025: isSyncing también se excluye
+            const { user, isOnline, sync, isSyncing, ...persistableState } = state;
             const dataToSave = {
                 ...persistableState,
                 jornadaInicio: persistableState.jornadaInicio
@@ -28,7 +30,7 @@ export const storageService = {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
             return true;
         } catch (error) {
-            console.error('Error saving to localStorage:', error);
+            // console.error('Error saving to localStorage:', error);
             return false;
         }
     },
@@ -47,7 +49,7 @@ export const storageService = {
             }
             return data;
         } catch (error) {
-            console.warn('Error loading from localStorage:', error);
+            // console.warn('Error loading from localStorage:', error);
             return null;
         }
     },

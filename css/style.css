@@ -363,7 +363,7 @@ option {
 .app-container {
     max-width: 480px;
     margin: 0 auto;
-    padding: 0 16px 120px;
+    padding: 0 16px calc(140px + env(safe-area-inset-bottom));
     position: relative;
     z-index: 1;
 }
@@ -843,7 +843,6 @@ h3 {
     padding: 32px 24px;
     position: relative;
     box-shadow: var(--shadow-premium);
-    overflow-x: hidden;
 }
 
 /* Animations and Utilities */
@@ -1850,6 +1849,84 @@ h3 {
     gap: 24px;
 }
 
+/* RP-013 Nivel 1: Resumen Financiero Premium */
+.financial-summary-card {
+    background: var(--surface-glass-light);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.fsc-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.fsc-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.fsc-net-amount {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--emerald);
+    line-height: 1;
+    font-family: inherit;
+    letter-spacing: -1px;
+}
+
+.fsc-divider {
+    height: 1px;
+    background: var(--border-glass);
+    width: 100%;
+}
+
+.fsc-metrics {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.fsc-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    gap: 4px;
+}
+
+.fsc-metric-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.fsc-metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+@media (max-width: 360px) {
+    .fsc-metrics {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1937,49 +2014,73 @@ h3 {
     gap: 16px;
 }
 
-.pr-item {
+.pr-item-premium {
+    background: var(--surface-glass-light);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
 }
 
-.pr-header {
+.pr-header-premium {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+}
+
+.pr-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.pr-name-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    overflow: hidden;
+    min-width: 0;
 }
 
 .pr-name {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
-.pr-badge {
+.pr-badge-rentable {
     background: rgba(234, 179, 8, 0.15);
     color: var(--gold);
     font-size: 9px;
-    padding: 2px 6px;
+    padding: 3px 6px;
     border-radius: 6px;
     font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
-.pr-amount {
-    font-size: 15px;
+.pr-amount-premium {
+    font-size: 18px;
     font-weight: 800;
+    color: var(--text-primary);
     font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.5px;
 }
 
-.pr-sub {
-    font-size: 12px;
-    color: var(--text-muted);
-    display: flex;
-    justify-content: space-between;
-}
-
-.pr-bar-bg {
+.pr-bar-bg-premium {
     width: 100%;
     height: 6px;
     background: var(--gauge-bg);
@@ -1987,10 +2088,38 @@ h3 {
     overflow: hidden;
 }
 
-.pr-bar-fill {
+.pr-bar-fill-premium {
     height: 100%;
     border-radius: 3px;
-    transition: width 1s ease;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pr-footer-premium {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.pr-footer-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pr-stat-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.pr-stat-lbl {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .payment-split-container {
@@ -2565,4 +2694,408 @@ h3 {
 
 .btn-email-login:active {
   background: rgba(255,255,255,0.05);
+}
+
+/* ============================================================
+   RP-004 — PLATFORM AUTOCOMPLETE
+   ============================================================ */
+
+/* Wrapper del campo de nombre (necesario para posicionar el dropdown) */
+.platform-name-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+/* Dropdown flotante de sugerencias */
+.platform-autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    width: max-content;
+    background: var(--bg-sapphire, #12131A);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 6px;
+    z-index: 4000;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    max-height: 240px;
+    overflow-y: auto;
+    display: none;
+    animation: dropdownReveal 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.platform-autocomplete-dropdown.visible {
+    display: block;
+}
+
+@keyframes dropdownReveal {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Ítem individual del dropdown */
+.autocomplete-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    white-space: nowrap;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.highlighted {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.autocomplete-item:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.autocomplete-item-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.autocomplete-item-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+    flex: 1;
+}
+
+.autocomplete-group-header {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 8px 10px 4px;
+    letter-spacing: 0.1em;
+}
+
+/* Badge de reconocimiento */
+.platform-recognition-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin-top: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    min-height: 16px;
+    transition: opacity 0.2s ease;
+    opacity: 0;
+}
+
+.platform-recognition-badge.visible {
+    opacity: 1;
+}
+
+.platform-recognition-badge.recognized {
+    color: var(--emerald, #10B981);
+}
+
+.platform-recognition-badge.custom {
+    color: var(--text-muted, #64748B);
+}
+
+/* Light mode overrides */
+[data-theme="light"] .platform-autocomplete-dropdown {
+    background: #FFFFFF;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .autocomplete-item:hover,
+[data-theme="light"] .autocomplete-item.highlighted {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .autocomplete-item-name {
+    color: #0D1117;
+}
+
+/* RP-015 Nivel 3: Salud Financiera */
+.financial-health-card {
+    background: var(--surface-glass-light);
+    border: 1px solid var(--border-glass);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.fh-impact-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.fh-hero-lbl {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.fh-hero-val {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1;
+    font-family: inherit;
+    letter-spacing: -1px;
+}
+
+.fh-gauge-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fh-gauge-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.fh-gauge-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+}
+
+.fh-gauge-markers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 0 2px;
+}
+
+.fh-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.fh-metric-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fh-metric-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.fh-metric-val {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+}
+
+.fh-major-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fh-major-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.fh-major-val {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.fh-status-box {
+    background: rgba(0,0,0,0.2);
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-left: 4px solid var(--emerald);
+}
+
+.fh-status-lbl {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 2px;
+}
+
+.fh-status-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.fh-status-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Nivel 4 Context Board */
+.context-board {
+    background: var(--surface-glass-light);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.cb-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.05);
+    width: 100%;
+}
+
+.cb-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cb-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+}
+
+.cb-metrics {
+    display: flex;
+    justify-content: space-around;
+}
+
+.cb-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.cb-val {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.cb-lbl {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.cb-payments {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cb-pay-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cb-pay-lbl {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+}
+
+.cb-pay-pct {
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.cb-pay-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cb-pay-fill {
+    height: 100%;
+    border-radius: 2px;
+}
+
+.cb-consistency {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cbc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+.cbc-lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.cbc-val {
+    font-size: 14px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
 }

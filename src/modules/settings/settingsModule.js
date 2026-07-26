@@ -4,7 +4,19 @@
 import { store } from '../../state/store.js';
 import { firestoreService } from '../../services/firestoreService.js';
 import { showToast } from '../../utils/ui-utils.js';
-import { renderAvatarPlataforma, escapeHTML } from '../../utils/format.js';
+import {
+    renderAvatarPlataforma,
+    escapeHTML,
+    normalizarNombre,
+    resolverIdCanonico,
+    getLogoUrlCached,
+    getColorOficial,
+    getCatalogoPlatformas,
+} from '../../utils/format.js';
+
+
+// Estado local de edición (no persiste, vive solo en memoria durante la sesión)
+let _currentEditingId = null;
 
 export const settingsModule = {
     open() {
@@ -20,6 +32,7 @@ export const settingsModule = {
 
     close() {
         document.getElementById('settingsModal').style.display = 'none';
+        this.cancelEditPlatform(); // Limpiar modo edición al cerrar el modal
     },
 
     async save(metaValue) {
@@ -38,7 +51,7 @@ export const settingsModule = {
             try {
                 await firestoreService.saveSettings(state.user.uid, newSettings);
             } catch (error) {
-                console.warn("Failed to sync settings to Firestore:", error);
+                // console.warn("Failed to sync settings to Firestore:", error);
             }
         }
 
@@ -106,7 +119,7 @@ export const settingsModule = {
             try {
                 await firestoreService.saveSettings(state.user.uid, newSettings);
             } catch (error) {
-                console.warn("Failed to sync settings to Firestore:", error);
+                // console.warn("Failed to sync settings to Firestore:", error);
             }
         }
 
@@ -132,7 +145,7 @@ export const settingsModule = {
             try {
                 await firestoreService.saveSettings(state.user.uid, newSettings);
             } catch (error) {
-                console.warn("Failed to sync settings to Firestore:", error);
+                // console.warn("Failed to sync settings to Firestore:", error);
             }
         }
 
@@ -140,19 +153,81 @@ export const settingsModule = {
         showToast('Plataforma eliminada', 'success');
     },
 
-    async editPlatform(id) {
+    /**
+     * Getter para que main.js pueda consultar si hay una edición activa
+     * sin acceder directamente a la variable de módulo privada.
+     */
+    _getCurrentEditingId() {
+        return _currentEditingId;
+    },
+
+    /**
+     * Activa el modo edición para la plataforma con el ID dado.
+     * Carga nombre y color en el formulario inferior y cambia el botón a "Actualizar".
+     */
+    startEditPlatform(id) {
         const state = store.getState();
-        const plat = state.settings.plataformas.find(p => p.id === id);
+        const plat = (state.settings.plataformas || []).find(p => p.id === id);
         if (!plat) return;
 
-        const newName = prompt('Nuevo nombre:', plat.name);
-        if (newName === null) return;
+        _currentEditingId = id;
 
-        const newColor = prompt('Nuevo color (hex):', plat.color);
-        if (newColor === null) return;
+        // Rellenar formulario con datos actuales
+        const nameEl = document.getElementById('newPlatformName');
+        const colorEl = document.getElementById('newPlatformColor');
+        if (nameEl) nameEl.value = plat.name;
+        if (colorEl) colorEl.value = plat.color || '#10B981';
 
-        const newPlataformas = state.settings.plataformas.map(p =>
-            p.id === id ? { ...p, name: newName.toUpperCase(), color: newColor } : p
+        // Cambiar UI al modo edición
+        const saveBtn = document.getElementById('addPlatformBtn');
+        const cancelBtn = document.getElementById('cancelEditPlatformBtn');
+        const modeBar = document.getElementById('platformEditModeBar');
+        if (saveBtn) saveBtn.textContent = 'Actualizar';
+        if (cancelBtn) cancelBtn.style.display = 'block';
+        if (modeBar) modeBar.style.display = 'block';
+
+        // Hacer scroll al formulario para que sea visible
+        if (nameEl) nameEl.focus();
+    },
+
+    /**
+     * Cancela el modo edición y restaura el formulario al estado de creación.
+     * Seguro de llamar aunque no haya edición activa.
+     */
+    cancelEditPlatform() {
+        _currentEditingId = null;
+
+        const nameEl = document.getElementById('newPlatformName');
+        const colorEl = document.getElementById('newPlatformColor');
+        const saveBtn = document.getElementById('addPlatformBtn');
+        const cancelBtn = document.getElementById('cancelEditPlatformBtn');
+        const modeBar = document.getElementById('platformEditModeBar');
+
+        if (nameEl) nameEl.value = '';
+        if (colorEl) colorEl.value = '#10B981';
+        if (saveBtn) saveBtn.textContent = 'Guardar';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        if (modeBar) modeBar.style.display = 'none';
+
+        // RP-004: Limpiar autocomplete y vista previa al cancelar
+        _hideDropdown();
+        _updateBadge('');
+        const previewContainer = document.getElementById('platformPreviewContainer');
+        if (previewContainer) previewContainer.style.display = 'none';
+    },
+
+    /**
+     * Persiste los cambios de nombre y color sobre la plataforma en edición.
+     * El ID original se conserva intacto — no se regenera.
+     */
+    async updatePlatform(name, color) {
+        if (!_currentEditingId || !name) return;
+        const state = store.getState();
+
+        const newPlataformas = (state.settings.plataformas || []).map(p =>
+            p.id === _currentEditingId
+                ? { ...p, name: name.toUpperCase(), color }
+                : p
         );
 
         const newSettings = { ...state.settings, plataformas: newPlataformas };
@@ -162,11 +237,289 @@ export const settingsModule = {
             try {
                 await firestoreService.saveSettings(state.user.uid, newSettings);
             } catch (error) {
-                console.warn("Failed to sync settings to Firestore:", error);
+                // console.warn('Failed to sync settings to Firestore:', error);
             }
         }
 
-        this.renderPlatformManager(newPlataformas);
+        await this.renderPlatformManager(newPlataformas);
         showToast('Plataforma actualizada', 'success');
-    }
+        this.cancelEditPlatform(); // Volver al modo creación
+    },
+
+    /**
+     * @deprecated — Reemplazado por startEditPlatform() en RP-002.
+     * Mantenido temporalmente para no romper referencias externas no detectadas.
+     */
+    editPlatform(id) {
+        this.startEditPlatform(id);
+    },
+
+    /**
+     * RP-004: Inicializa el motor de autocomplete para el campo de nombre de plataforma.
+     * Debe llamarse una sola vez desde main.js en setupEventListeners().
+     * Reutiliza: getCatalogoPlatformas, getLogoUrlCached, getColorOficial, resolverIdCanonico.
+     */
+    async initAutocomplete() {
+        const nameEl = document.getElementById('newPlatformName');
+        const colorEl = document.getElementById('newPlatformColor');
+        const dropdown = document.getElementById('platformAutocompleteDropdown');
+        
+        if (!nameEl || !dropdown || !colorEl) return;
+
+        // ── 1. Construir catálogo y pre-cargar logos ──────────────────────────
+        const catalogoCompleto = getCatalogoPlatformas(); // { plataformas, directos }
+
+        // Pre-carga asíncrona en background (no bloquea la UI)
+        catalogoCompleto.plataformas.forEach(p => getLogoUrlCached(p.nombreOficial));
+
+        // ── 2. Estado interno del autocomplete ────────────────────────────────
+        let _highlightedIndex = -1;
+        let _blurTimeout = null;
+        let _currentItems = [];
+
+        // ── 3. Renderizar dropdown ────────────────────────────────────────────
+        async function _renderDropdown(query) {
+            const q = normalizarNombre(query);
+            
+            // Filtrar por startsWith sobre nombre normalizado
+            const filteredPlataformas = catalogoCompleto.plataformas.filter(p =>
+                !q || normalizarNombre(p.nombreOficial).startsWith(q)
+            );
+            
+            const filteredDirectos = catalogoCompleto.directos.filter(p =>
+                !q || normalizarNombre(p.nombreOficial).startsWith(q)
+            );
+
+            _currentItems = [...filteredPlataformas, ...filteredDirectos];
+
+            if (_currentItems.length === 0) {
+                _hideDropdown();
+                return;
+            }
+
+            let itemsHtml = '';
+            let globalIndex = 0;
+
+            if (filteredPlataformas.length > 0) {
+                itemsHtml += `<div class="autocomplete-group-header">Plataformas</div>`;
+                const platHtmls = await Promise.all(filteredPlataformas.map(async (p) => {
+                    const color = p.colorOficial || '#6B7280';
+                    const avatarHtml = await renderAvatarPlataforma({ name: p.nombreOficial, color });
+                    const html = `<div class="autocomplete-item" data-index="${globalIndex}" role="option" aria-selected="false">
+                        ${avatarHtml}
+                        <span class="autocomplete-item-name">${escapeHTML(p.nombreOficial)}</span>
+                    </div>`;
+                    globalIndex++;
+                    return html;
+                }));
+                itemsHtml += platHtmls.join('');
+            }
+
+            if (filteredDirectos.length > 0) {
+                itemsHtml += `<div class="autocomplete-group-header">Servicios Directos</div>`;
+                const dirHtmls = await Promise.all(filteredDirectos.map(async (p) => {
+                    const color = p.colorOficial || '#6B7280';
+                    const avatarHtml = await renderAvatarPlataforma({ name: p.nombreOficial, color });
+                    const html = `<div class="autocomplete-item" data-index="${globalIndex}" role="option" aria-selected="false">
+                        ${avatarHtml}
+                        <span class="autocomplete-item-name">${escapeHTML(p.nombreOficial)}</span>
+                    </div>`;
+                    globalIndex++;
+                    return html;
+                }));
+                itemsHtml += dirHtmls.join('');
+            }
+
+            dropdown.innerHTML = itemsHtml;
+            _highlightedIndex = -1;
+            dropdown.classList.add('visible');
+
+            // Bind clicks en ítems (delegación)
+            dropdown.querySelectorAll('.autocomplete-item').forEach(el => {
+                el.addEventListener('mousedown', (e) => {
+                    // mousedown ocurre antes del blur — cancelar el blurTimeout
+                    if (_blurTimeout) clearTimeout(_blurTimeout);
+                    e.preventDefault();
+                    const idx = parseInt(el.dataset.index, 10);
+                    _selectItem(idx);
+                });
+            });
+        }
+
+        // ── 4. Seleccionar ítem ───────────────────────────────────────────────
+        function _selectItem(index) {
+            const plat = _currentItems[index];
+            if (!plat) return;
+
+            // Rellenar nombre
+            nameEl.value = plat.nombreOficial;
+
+            // Rellenar color oficial
+            const colorOficial = getColorOficial(plat.nombreOficial) || plat.colorOficial;
+            if (colorOficial) colorEl.value = colorOficial;
+
+            _hideDropdown();
+            _updateBadge(plat.nombreOficial);
+            _updatePreview();
+            
+            // Poner el cursor al final
+            nameEl.focus();
+            const len = nameEl.value.length;
+            nameEl.setSelectionRange(len, len);
+        }
+
+        // ── 5. Highlight con teclado ──────────────────────────────────────────
+        function _setHighlight(index) {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            items.forEach((el, i) => {
+                const isSelected = i === index;
+                el.classList.toggle('highlighted', isSelected);
+                el.setAttribute('aria-selected', isSelected.toString());
+                if (isSelected) {
+                    el.scrollIntoView({ block: 'nearest' });
+                }
+            });
+            _highlightedIndex = index;
+        }
+
+        // ── 6. Eventos ────────────────────────────────────────────────────────
+        nameEl.addEventListener('input', async () => {
+            await _renderDropdown(nameEl.value);
+            _updateBadge(nameEl.value);
+            _updatePreview();
+        });
+
+        colorEl.addEventListener('input', () => {
+            _updatePreview();
+        });
+
+        nameEl.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            const total = items.length;
+            if (!dropdown.classList.contains('visible') || total === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                _setHighlight(Math.min(_highlightedIndex + 1, total - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                _setHighlight(Math.max(_highlightedIndex - 1, 0));
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (_highlightedIndex >= 0) {
+                    e.preventDefault();
+                    _selectItem(_highlightedIndex);
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                _hideDropdown();
+            }
+        });
+
+        nameEl.addEventListener('blur', () => {
+            // Delay para que el click en un ítem pueda ejecutarse primero
+            _blurTimeout = setTimeout(() => _hideDropdown(), 200);
+        });
+
+        nameEl.addEventListener('focus', async () => {
+            await _renderDropdown(nameEl.value);
+            _updateBadge(nameEl.value);
+            _updatePreview();
+        });
+
+        // Botón Restaurar Oficial
+        const btnRestore = document.getElementById('restoreOfficialColorBtn');
+        if (btnRestore) {
+            btnRestore.addEventListener('click', (e) => {
+                e.preventDefault();
+                const nombre = nameEl.value;
+                const oficial = getColorOficial(nombre);
+                if (oficial) {
+                    colorEl.value = oficial;
+                    _updatePreview();
+                }
+            });
+        }
+    },
 };
+
+// ── Helpers privados del autocomplete (fuera del objeto para no contaminar el API) ──
+
+function _hideDropdown() {
+    const dropdown = document.getElementById('platformAutocompleteDropdown');
+    if (dropdown) {
+        dropdown.classList.remove('visible');
+        dropdown.innerHTML = '';
+    }
+}
+
+function _updateBadge(nombre) {
+    const badge = document.getElementById('platformRecognitionBadge');
+    if (!badge) return;
+
+    if (!nombre || !nombre.trim()) {
+        badge.classList.remove('visible', 'recognized', 'custom');
+        badge.textContent = '';
+        return;
+    }
+
+    const idCanonico = resolverIdCanonico(nombre);
+    const esReconocida = idCanonico && idCanonico !== 'SIN_LOGO' && !idCanonico.startsWith('CUSTOM_');
+
+    badge.classList.remove('recognized', 'custom');
+    badge.classList.add('visible', esReconocida ? 'recognized' : 'custom');
+
+    if (esReconocida) {
+        badge.innerHTML = `
+            <div style="display:flex; align-items:center; gap:4px; text-transform:uppercase;">
+                <span>✓</span> Plataforma reconocida
+            </div>
+            <div style="font-size:8px; color:var(--text-muted); opacity:0.85; font-weight:600; letter-spacing:0.02em;">
+                Se utilizarán el nombre, icono y color oficiales.
+            </div>
+        `;
+    } else {
+        badge.innerHTML = `
+            <div style="display:flex; align-items:center; gap:4px; text-transform:uppercase;">
+                <span>○</span> Plataforma personalizada
+            </div>
+            <div style="font-size:8px; color:var(--text-muted); opacity:0.85; font-weight:600; letter-spacing:0.02em;">
+                Se utilizarán las iniciales como icono.
+            </div>
+        `;
+    }
+}
+
+async function _updatePreview() {
+    const nameEl = document.getElementById('newPlatformName');
+    const colorEl = document.getElementById('newPlatformColor');
+    const previewContainer = document.getElementById('platformPreviewContainer');
+    const previewAvatar = document.getElementById('platformPreviewAvatar');
+    const previewName = document.getElementById('platformPreviewName');
+    const btnRestore = document.getElementById('restoreOfficialColorBtn');
+
+    if (!previewContainer || !nameEl || !colorEl) return;
+
+    const nombre = nameEl.value.trim();
+    if (!nombre) {
+        previewContainer.style.display = 'none';
+        return;
+    }
+
+    const color = colorEl.value;
+    const colorOficial = getColorOficial(nombre);
+
+    // Mostrar el contenedor y el nombre
+    previewContainer.style.display = 'flex';
+    previewName.textContent = nombre;
+
+    // Renderizar avatar dinámicamente
+    if (previewAvatar) {
+        previewAvatar.innerHTML = await renderAvatarPlataforma({ name: nombre, color });
+    }
+
+    // Botón de restaurar
+    const isCustomColor = colorOficial && colorOficial.toUpperCase() !== color.toUpperCase();
+    if (btnRestore) {
+        btnRestore.style.display = isCustomColor ? 'block' : 'none';
+    }
+}

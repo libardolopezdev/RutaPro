@@ -41,3 +41,76 @@ export function showToast(message, type = 'success') {
     }, 3000);
 }
 
+/**
+ * Muestra un modal de confirmación genérico.
+ * @param {Object} options Opciones del modal
+ * @param {string} options.title Título del modal
+ * @param {string} options.message Mensaje del modal (soporta HTML)
+ * @param {string} [options.confirmText="Confirmar"] Texto del botón confirmar
+ * @param {string} [options.cancelText="Cancelar"] Texto del botón cancelar
+ * @param {string} [options.icon=""] Icono opcional (emoji o HTML)
+ * @param {string} [options.confirmStyle="var(--ruby)"] Color de fondo del botón confirmar
+ * @returns {Promise<boolean>} Promesa que resuelve a true si el usuario confirma, o false si cancela/cierra.
+ */
+export function showConfirm(options) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmModalTitle');
+        const msgEl = document.getElementById('confirmModalMessage');
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+        const confirmBtn = document.getElementById('confirmModalConfirmBtn');
+        const iconEl = document.getElementById('confirmModalIcon');
+
+        if (!modal || !titleEl || !msgEl || !cancelBtn || !confirmBtn) {
+            // console.error('No se encontró el modal de confirmación genérico.');
+            resolve(false);
+            return;
+        }
+
+        // Configurar contenido
+        titleEl.textContent = options.title || 'Confirmar';
+        msgEl.innerHTML = options.message || '';
+        cancelBtn.textContent = options.cancelText || 'Cancelar';
+        confirmBtn.textContent = options.confirmText || 'Confirmar';
+        confirmBtn.style.background = options.confirmStyle || 'var(--ruby)';
+
+        if (options.icon) {
+            iconEl.innerHTML = options.icon;
+            iconEl.style.display = 'block';
+        } else {
+            iconEl.style.display = 'none';
+        }
+
+        // Función para cerrar
+        const close = (result) => {
+            modal.style.display = 'none';
+            // Remover listeners
+            cancelBtn.onclick = null;
+            confirmBtn.onclick = null;
+            modal.onclick = null;
+            document.removeEventListener('keydown', keydownHandler);
+            resolve(result);
+        };
+
+        // Asignar listeners
+        cancelBtn.onclick = () => close(false);
+        confirmBtn.onclick = () => close(true);
+        
+        // Clic fuera del modal (overlay)
+        modal.onclick = (e) => {
+            if (e.target === modal) close(false);
+        };
+
+        // Tecla Escape
+        const keydownHandler = (e) => {
+            if (e.key === 'Escape') {
+                close(false);
+            }
+        };
+        document.addEventListener('keydown', keydownHandler);
+
+        // Mostrar modal
+        modal.style.display = 'flex';
+    });
+}
+
