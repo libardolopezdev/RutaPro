@@ -866,6 +866,14 @@
                 </div>
             </div>
 
+            <!-- Botón Tutorial -->
+            <div style="margin-bottom:32px;">
+                <button id="restartTutorialBtn" class="btn-ultra" style="background:rgba(255,255,255,0.05); color:white; border:1px solid var(--border-glass); width:100%; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-8.52l-5.3 5.3"></path></svg>
+                    Volver a ver el Tutorial
+                </button>
+            </div>
+
 
             <div style="margin-bottom:24px;">
                 <span class="label-xs">Mis Plataformas</span>
@@ -1518,6 +1526,18 @@
                 <button id="confirmModalCancelBtn" style="flex:1; background:rgba(255,255,255,0.07); color:var(--text-secondary); border:1px solid var(--border-glass); border-radius:12px; height:44px; font-weight:700; font-size:14px; cursor:pointer;">Cancelar</button>
                 <button id="confirmModalConfirmBtn" style="flex:1; background:var(--ruby); color:white; border:none; border-radius:12px; height:44px; font-weight:700; font-size:14px; cursor:pointer;">Confirmar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- TUTORIAL OVERLAY -->
+    <div id="tutorialOverlay"></div>
+    <div id="tutorialTooltip">
+        <div class="tutorial-step-indicator" id="tutorialStepIndicator">PASO 1 DE 4</div>
+        <h3 class="tutorial-title" id="tutorialTitle">Título</h3>
+        <p class="tutorial-text" id="tutorialText">Texto del tutorial.</p>
+        <div class="tutorial-actions">
+            <button id="btnTutorialSkip" style="background:none; border:none; color:var(--text-muted); font-size:12px; font-weight:700; cursor:pointer;">SALTAR</button>
+            <button id="btnTutorialNext" class="btn-ultra btn-emerald" style="padding: 10px 20px; font-size:13px; border-radius:10px;">SIGUIENTE</button>
         </div>
     </div>
 

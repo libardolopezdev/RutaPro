@@ -3099,3 +3099,90 @@ h3 {
     font-weight: 800;
     font-family: 'JetBrains Mono', monospace;
 }
+
+/* =========================================
+   TUTORIAL (COACH MARKS)
+========================================= */
+#tutorialOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9998;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#tutorialOverlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.tutorial-highlight {
+    position: relative !important;
+    z-index: 9999 !important;
+    box-shadow: 0 0 0 4px var(--emerald), 0 0 20px rgba(0, 230, 118, 0.4) !important;
+    border-radius: inherit;
+    pointer-events: none !important; 
+}
+
+.tutorial-highlight.interactive {
+    pointer-events: auto !important;
+}
+
+#tutorialTooltip {
+    position: fixed;
+    z-index: 10000;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    width: 280px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#tutorialTooltip.active {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.tutorial-step-indicator {
+    font-size: 11px;
+    color: var(--emerald);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tutorial-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+}
+
+.tutorial-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.tutorial-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}

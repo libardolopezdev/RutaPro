@@ -15,6 +15,7 @@ import { historicoModule } from './modules/historico/historicoModule.js';
 import { estadisticasModule } from './modules/estadisticas/estadisticasModule.js';
 import { settingsModule } from './modules/settings/settingsModule.js';
 import { notificationsModule } from './modules/notifications/notificationsModule.js';
+import { tutorialModule } from './modules/tutorial/tutorialModule.js';
 import { haptics, springPress, animateCounter, shakeElement, launchConfetti } from './utils/haptics.js';
 
 window.historicoModule = historicoModule;
@@ -55,8 +56,9 @@ async function initApp() {
     gastosModule.init();
     settingsModule.initAutocomplete();
     
-    // Make onboardingModule globally accessible so authModule can initialize it
+    // Make modules globally accessible where needed
     window.onboardingModule = onboardingModule;
+    window.tutorialModule = tutorialModule;
 
     // ── Cargar Tema Persistente ──
     const savedTheme = localStorage.getItem('rutapro_theme') || 'dark';
@@ -207,6 +209,12 @@ function setupEventListeners() {
         }
     });
 
+    bind('restartTutorialBtn', 'click', () => {
+        closeModal('settingsModal');
+        if (window.tutorialModule) {
+            window.tutorialModule.start(true); // force start
+        }
+    });
 
     bind('btnFinalizarJornada', 'click', () => {
         const state = store.getState();

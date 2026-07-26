@@ -4,6 +4,7 @@
 import { store } from '../../state/store.js';
 import { auth } from '../../services/firebase-init.js';
 import { firestoreService } from '../../services/firestoreService.js';
+import { tutorialModule } from '../tutorial/tutorialModule.js';
 import { showToast } from '../../utils/ui-utils.js';
 
 let activeJornadaUnsub = null;
@@ -242,6 +243,12 @@ export const authModule = {
                 }
             );
         }
+
+        setTimeout(() => {
+            if (tutorialModule) {
+                tutorialModule.start();
+            }
+        }, 600);
     },
 
     showLanding() {
