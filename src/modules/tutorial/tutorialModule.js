@@ -5,27 +5,21 @@ import { auth } from '../../services/firebase-init.js';
 export const tutorialModule = {
     steps: [
         {
-            targetId: 'btnNuevaCarrera',
-            title: 'Registra tus ganancias',
-            text: 'Aquí sumarás el dinero de cada viaje que hagas. Trata de registrarlo en cuanto el pasajero baje.',
-            placement: 'bottom'
-        },
-        {
-            targetId: 'btnNuevoGasto',
-            title: 'Controla tus gastos',
-            text: 'Registra la gasolina, lavadas o almuerzos. Así sabrás cuál es tu ganancia REAL (Bolsillo limpio).',
-            placement: 'bottom'
+            targetId: 'mainFab',
+            title: 'El Botón Principal',
+            text: 'Aquí registrarás cada carrera que hagas, anotarás tus gastos y podrás cerrar tu jornada.',
+            placement: 'top'
         },
         {
             targetId: 'heroGananciasCard',
-            title: 'Tu Meta Diaria',
-            text: 'Este círculo se llenará a medida que te acerques a tu meta. ¡Mantén el enfoque!',
+            title: 'Tu Progreso',
+            text: 'Aquí verás cuánto has ganado hoy y qué tan cerca estás de tu meta.',
             placement: 'bottom'
         },
         {
-            targetId: 'btnCerrarJornada',
-            title: 'Cierra tu día',
-            text: '¡Muy importante! Toca aquí cuando vayas a casa para guardar el resumen de tu día en el historial.',
+            targetId: 'navHistorico',
+            title: 'Reportes y Estadísticas',
+            text: 'Consulta aquí tus días pasados y descubre qué días ganas más dinero.',
             placement: 'top'
         }
     ],
@@ -49,28 +43,24 @@ export const tutorialModule = {
             return;
         }
 
-        // Clean previous
-        document.querySelectorAll('.tutorial-highlight').forEach(el => {
-            el.classList.remove('tutorial-highlight');
-            // Remove inline relative if added
-            if (el.dataset.tutorialPosBackup) {
-                el.style.position = el.dataset.tutorialPosBackup;
-            }
-        });
-
         const step = this.steps[this.currentStepIndex];
         const targetEl = document.getElementById(step.targetId);
 
         if (!targetEl) {
-            // Si no encuentra el elemento (por ej. si está oculto), salta el paso
             this.currentStepIndex++;
             this.showStep();
             return;
         }
 
-        // Backup position
-        targetEl.dataset.tutorialPosBackup = targetEl.style.position;
-        targetEl.classList.add('tutorial-highlight');
+        // Setup the hole
+        const hole = document.getElementById('tutorialHole');
+        const rect = targetEl.getBoundingClientRect();
+        
+        hole.style.top = `${rect.top - 8}px`;
+        hole.style.left = `${rect.left - 8}px`;
+        hole.style.width = `${rect.width + 16}px`;
+        hole.style.height = `${rect.height + 16}px`;
+        hole.style.borderRadius = getComputedStyle(targetEl).borderRadius || '16px';
 
         // Update Tooltip
         const tooltip = document.getElementById('tutorialTooltip');
@@ -87,20 +77,17 @@ export const tutorialModule = {
 
         // Position tooltip
         tooltip.classList.add('active');
-        const rect = targetEl.getBoundingClientRect();
         
-        // Basic positioning (always center horizontally relative to element, below or above)
         let top = 0;
-        let left = rect.left + (rect.width / 2) - 140; // 280px width / 2
+        let left = rect.left + (rect.width / 2) - 140; 
         
-        // Ensure it doesn't go off screen
         if (left < 10) left = 10;
         if (left + 280 > window.innerWidth - 10) left = window.innerWidth - 290;
 
         if (step.placement === 'top') {
-            top = rect.top - tooltip.offsetHeight - 20;
+            top = rect.top - tooltip.offsetHeight - 30;
         } else {
-            top = rect.bottom + 20;
+            top = rect.bottom + 30;
         }
 
         tooltip.style.top = `${top}px`;
@@ -122,13 +109,6 @@ export const tutorialModule = {
         document.getElementById('tutorialOverlay').classList.remove('active');
         document.getElementById('tutorialTooltip').classList.remove('active');
         
-        document.querySelectorAll('.tutorial-highlight').forEach(el => {
-            el.classList.remove('tutorial-highlight');
-            if (el.dataset.tutorialPosBackup) {
-                el.style.position = el.dataset.tutorialPosBackup;
-            }
-        });
-
         // Save state to Firebase
         const user = auth.currentUser;
         if (user) {
