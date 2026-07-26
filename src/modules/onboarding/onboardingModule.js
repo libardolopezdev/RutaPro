@@ -40,15 +40,59 @@ export const onboardingModule = {
         };
 
         // Pantalla 2: Ciudad
-        const cityChips = document.querySelectorAll('#onbCityChips .p-chip');
         const cityInput = document.getElementById('onbCityInput');
+        const cityChipsContainer = document.getElementById('onbCityChips');
         
-        cityChips.forEach(chip => {
-            chip.onclick = () => {
-                cityInput.value = chip.getAttribute('data-val');
-                this.selectedCity = cityInput.value;
-            };
-        });
+        const COLOMBIAN_CITIES = [
+            'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Cúcuta',
+            'Bucaramanga', 'Pereira', 'Santa Marta', 'Ibagué', 'Bello', 'Pasto',
+            'Manizales', 'Neiva', 'Soledad', 'Villavicencio', 'Armenia', 'Soacha',
+            'Valledupar', 'Itagüí', 'Montería', 'Sincelejo', 'Popayán', 'Floridablanca',
+            'Palmira', 'Buenaventura', 'Tuluá', 'Dosquebradas', 'Envigado', 'Tunja',
+            'Girón', 'Apartadó', 'Florencia', 'Uribia', 'Ipiales', 'Quibdó', 'Duitama',
+            'Pitalito', 'Piedecuesta', 'Magangué', 'Chía', 'Jamundí', 'Yumbo', 'Sahagún',
+            'Caucasia', 'Cereté', 'Aguachica', 'Girardot', 'Sogamoso', 'Rionegro'
+        ];
+
+        const renderCities = (query = '') => {
+            if (!cityChipsContainer) return;
+            const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            
+            let filtered = [];
+            if (!q) {
+                filtered = ['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga', 'Cartagena'];
+            } else {
+                filtered = COLOMBIAN_CITIES.filter(c => 
+                    c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
+                ).slice(0, 6);
+            }
+
+            if (filtered.length === 0 && q) {
+                // Allow custom city if typing doesn't match
+                filtered = [cityInput.value.trim()];
+            }
+
+            cityChipsContainer.innerHTML = filtered.map(c => 
+                `<div class="onb-option city-option" data-val="${c}" style="text-align:center; padding:16px; width: 100%; box-sizing: border-box;">${c}</div>`
+            ).join('');
+
+            cityChipsContainer.querySelectorAll('.city-option').forEach(chip => {
+                chip.onclick = () => {
+                    cityInput.value = chip.getAttribute('data-val');
+                    this.selectedCity = cityInput.value;
+                    cityChipsContainer.querySelectorAll('.city-option').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                };
+            });
+        };
+
+        renderCities();
+
+        if (cityInput) {
+            cityInput.addEventListener('input', (e) => {
+                renderCities(e.target.value);
+            });
+        }
 
         document.getElementById('onbBtn2').onclick = () => {
             this.selectedCity = cityInput.value.trim();
