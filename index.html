@@ -165,7 +165,59 @@
     <!-- ONBOARDING SCREEN -->
     <div id="onboardingScreen" style="display: none; min-height:100vh; flex-direction:column; padding:24px; position:relative; overflow:hidden;">
         <!-- Container for steps -->
+        <!-- Step 1: Vehicle -->
         <div id="onbStep1" style="display:flex; flex-direction:column; flex:1;">
+            <div style="margin-top:20px; margin-bottom:30px;">
+                <h2 style="font-size:32px; font-weight:900; color:white; line-height:1.2; margin-bottom:8px;">¿Qué vehículo conduces?</h2>
+                <p style="color:var(--text-secondary); font-size:15px;">Esto ajusta tu modelo de gastos fijos.</p>
+            </div>
+            <div style="margin-bottom:20px;">
+                <span class="label-xs">Tipo de vehículo</span>
+                <div style="display:flex; gap:10px; margin-top:8px;" id="onbVehicleType">
+                    <div class="onb-option active" data-val="carro" style="flex:1; text-align:center; padding:12px 0;">🚗 Particular</div>
+                    <div class="onb-option" data-val="moto" style="flex:1; text-align:center; padding:12px 0;">🏍️ Moto</div>
+                    <div class="onb-option" data-val="taxi" style="flex:1; text-align:center; padding:12px 0;">🚕 Taxi</div>
+                </div>
+            </div>
+            <div style="margin-bottom:20px;">
+                <span class="label-xs">Relación con el vehículo</span>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;" id="onbVehicleOwnership">
+                    <div class="onb-option active" data-val="propio" style="display:flex; flex-direction:column; align-items:flex-start;">
+                        <span style="font-weight:700;">Es propio</span>
+                        <span style="font-size:11px; color:var(--text-muted); margin-top:4px;">Asumo gastos de mantenimiento y gasolina.</span>
+                    </div>
+                    <div class="onb-option" data-val="alquilado" style="display:flex; flex-direction:column; align-items:flex-start;">
+                        <span style="font-weight:700;">Es alquilado / A cargo</span>
+                        <span style="font-size:11px; color:var(--text-muted); margin-top:4px;">Pago una tarifa fija diaria (entregable).</span>
+                    </div>
+                </div>
+            </div>
+            <div style="flex:1;"></div>
+            <button class="btn-ultra btn-emerald" id="onbBtn1" style="width:100%; height:56px; font-size:16px;">Continuar</button>
+        </div>
+
+        <!-- Step 2: City -->
+        <div id="onbStep2" style="display:none; flex-direction:column; flex:1;">
+            <div style="margin-top:20px; margin-bottom:40px;">
+                <h2 style="font-size:32px; font-weight:900; color:white; line-height:1.2; margin-bottom:8px;">¿En qué ciudad trabajas?</h2>
+                <p style="color:var(--text-secondary); font-size:15px;">Para darte métricas precisas sobre tarifas y clima.</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px; flex:1;" id="onbCityList">
+                <input type="text" id="onbCityInput" class="input-premium" placeholder="Ej: Bogotá, Medellín..." style="font-size:16px; padding:16px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:rgba(0,0,0,0.2); width:100%;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;" id="onbCityChips">
+                    <div class="p-chip" data-val="Bogotá">Bogotá</div>
+                    <div class="p-chip" data-val="Medellín">Medellín</div>
+                    <div class="p-chip" data-val="Cali">Cali</div>
+                    <div class="p-chip" data-val="Barranquilla">Barranquilla</div>
+                    <div class="p-chip" data-val="Bucaramanga">Bucaramanga</div>
+                    <div class="p-chip" data-val="Cartagena">Cartagena</div>
+                </div>
+            </div>
+            <button class="btn-ultra btn-emerald" id="onbBtn2" style="width:100%; height:56px; font-size:16px;">Continuar</button>
+        </div>
+
+        <!-- Step 3: Platforms -->
+        <div id="onbStep3" style="display:none; flex-direction:column; flex:1;">
             <div style="margin-top:20px; margin-bottom:40px;">
                 <h2 style="font-size:32px; font-weight:900; color:white; line-height:1.2; margin-bottom:8px;">¿Con cuáles aplicaciones trabajas?</h2>
                 <p style="color:var(--text-secondary); font-size:15px;">Selecciona todas las que uses normalmente.</p>
@@ -181,10 +233,11 @@
                     <input type="text" id="onbOtrasInput" class="input-premium" placeholder="Ej: Bolt, Yango, Maxim..." style="font-size:16px; padding:12px 16px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; background:rgba(0,0,0,0.2);">
                 </div>
             </div>
-            <button class="btn-ultra btn-emerald" id="onbBtn1" style="width:100%; height:56px; font-size:16px;">Continuar</button>
+            <button class="btn-ultra btn-emerald" id="onbBtn3" style="width:100%; height:56px; font-size:16px;">Continuar</button>
         </div>
 
-        <div id="onbStep2" style="display:none; flex-direction:column; flex:1;">
+        <!-- Step 4: Meta -->
+        <div id="onbStep4" style="display:none; flex-direction:column; flex:1;">
             <div style="margin-top:20px; margin-bottom:40px;">
                 <h2 style="font-size:32px; font-weight:900; color:white; line-height:1.2; margin-bottom:8px;">¿Cuál es tu meta para hoy?</h2>
             </div>
@@ -208,19 +261,20 @@
                     <input type="number" id="onbCustomMeta" class="input-premium" placeholder="$ Ej. 250000" style="text-align:center; font-size:24px; font-family:'JetBrains Mono';">
                 </div>
             </div>
-            <button class="btn-ultra btn-emerald" id="onbBtn2" style="width:100%; height:56px; font-size:16px;">Continuar</button>
+            <button class="btn-ultra btn-emerald" id="onbBtn4" style="width:100%; height:56px; font-size:16px;">Continuar</button>
         </div>
 
-        <div id="onbStep3" style="display:none; flex-direction:column; flex:1;">
+        <!-- Step 5: Payment -->
+        <div id="onbStep5" style="display:none; flex-direction:column; flex:1;">
             <div style="margin-top:20px; margin-bottom:40px;">
-                <h2 style="font-size:32px; font-weight:900; color:white; line-height:1.2; margin-bottom:8px;">¿Cómo recibes normalmente tus pagos cuando trabajas?</h2>
+                <h2 style="font-size:32px; font-weight:900; color:white; line-height:1.2; margin-bottom:8px;">¿Cómo recibes normalmente tus pagos?</h2>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; flex:1;" id="onbPayList">
                 <div class="onb-option" data-val="efectivo">💵 Principalmente efectivo</div>
                 <div class="onb-option" data-val="digital">📲 Principalmente digital</div>
                 <div class="onb-option active" data-val="mixed">⚖ Mitad efectivo / mitad digital</div>
             </div>
-            <button class="btn-ultra btn-emerald" id="onbBtn3" style="width:100%; height:56px; font-size:16px;">Finalizar configuración</button>
+            <button class="btn-ultra btn-emerald" id="onbBtn5" style="width:100%; height:56px; font-size:16px;">Finalizar configuración</button>
         </div>
 
         <div id="onbSuccess" style="display:none; flex-direction:column; flex:1; justify-content:center; align-items:center; text-align:center;">

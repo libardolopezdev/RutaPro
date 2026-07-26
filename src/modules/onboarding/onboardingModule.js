@@ -3,6 +3,9 @@ import { firestoreService } from '../../services/firestoreService.js';
 import { store } from '../../state/store.js';
 
 export const onboardingModule = {
+    selectedVehicleType: 'carro',
+    selectedVehicleOwnership: 'propio',
+    selectedCity: '',
     selectedPlatforms: new Set(),
     selectedMeta: 200000,
     selectedPayment: 'mixed',
@@ -13,7 +16,50 @@ export const onboardingModule = {
     },
 
     bindEvents() {
-        // Pantalla 1: Plataformas
+        // Pantalla 1: Vehículo
+        const vTypeOptions = document.querySelectorAll('#onbVehicleType .onb-option');
+        vTypeOptions.forEach(opt => {
+            opt.onclick = () => {
+                vTypeOptions.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                this.selectedVehicleType = opt.getAttribute('data-val');
+            };
+        });
+
+        const vOwnOptions = document.querySelectorAll('#onbVehicleOwnership .onb-option');
+        vOwnOptions.forEach(opt => {
+            opt.onclick = () => {
+                vOwnOptions.forEach(o => o.classList.remove('active'));
+                opt.classList.add('active');
+                this.selectedVehicleOwnership = opt.getAttribute('data-val');
+            };
+        });
+
+        document.getElementById('onbBtn1').onclick = () => {
+            this.showStep(2);
+        };
+
+        // Pantalla 2: Ciudad
+        const cityChips = document.querySelectorAll('#onbCityChips .p-chip');
+        const cityInput = document.getElementById('onbCityInput');
+        
+        cityChips.forEach(chip => {
+            chip.onclick = () => {
+                cityInput.value = chip.getAttribute('data-val');
+                this.selectedCity = cityInput.value;
+            };
+        });
+
+        document.getElementById('onbBtn2').onclick = () => {
+            this.selectedCity = cityInput.value.trim();
+            if (!this.selectedCity) {
+                alert('Por favor ingresa o selecciona tu ciudad de trabajo.');
+                return;
+            }
+            this.showStep(3);
+        };
+
+        // Pantalla 3: Plataformas
         const platformOptions = document.querySelectorAll('#onbPlatformList .onb-option');
         const otrasWrap = document.getElementById('onbOtrasInputWrap');
         
@@ -35,7 +81,7 @@ export const onboardingModule = {
             };
         });
 
-        document.getElementById('onbBtn1').onclick = () => {
+        document.getElementById('onbBtn3').onclick = () => {
             if (this.selectedPlatforms.size === 0) {
                 alert('Selecciona al menos una aplicación.');
                 return;
@@ -48,10 +94,10 @@ export const onboardingModule = {
                 }
                 this.customOtrasName = otrasVal;
             }
-            this.showStep(2);
+            this.showStep(4);
         };
 
-        // Pantalla 2: Meta
+        // Pantalla 4: Meta
         const metaOptions = document.querySelectorAll('#onbMetaList .onb-option');
         const customWrap = document.getElementById('onbCustomMetaWrap');
         metaOptions.forEach(opt => {
@@ -69,7 +115,7 @@ export const onboardingModule = {
             };
         });
 
-        document.getElementById('onbBtn2').onclick = () => {
+        document.getElementById('onbBtn4').onclick = () => {
             const activeOpt = document.querySelector('#onbMetaList .onb-option.active');
             if (activeOpt && activeOpt.getAttribute('data-val') === 'custom') {
                 const customVal = parseInt(document.getElementById('onbCustomMeta').value, 10);
@@ -79,10 +125,10 @@ export const onboardingModule = {
                 }
                 this.selectedMeta = customVal;
             }
-            this.showStep(3);
+            this.showStep(5);
         };
 
-        // Pantalla 3: Pagos
+        // Pantalla 5: Pagos
         const payOptions = document.querySelectorAll('#onbPayList .onb-option');
         payOptions.forEach(opt => {
             opt.onclick = () => {
@@ -92,7 +138,7 @@ export const onboardingModule = {
             };
         });
 
-        document.getElementById('onbBtn3').onclick = () => {
+        document.getElementById('onbBtn5').onclick = () => {
             this.finishOnboarding();
         };
 
@@ -109,10 +155,11 @@ export const onboardingModule = {
     },
 
     showStep(step) {
-        document.getElementById('onbStep1').style.display = step === 1 ? 'flex' : 'none';
-        document.getElementById('onbStep2').style.display = step === 2 ? 'flex' : 'none';
-        document.getElementById('onbStep3').style.display = step === 3 ? 'flex' : 'none';
-        document.getElementById('onbSuccess').style.display = step === 4 ? 'flex' : 'none';
+        for (let i = 1; i <= 5; i++) {
+            const el = document.getElementById('onbStep' + i);
+            if (el) el.style.display = step === i ? 'flex' : 'none';
+        }
+        document.getElementById('onbSuccess').style.display = step === 6 ? 'flex' : 'none';
     },
 
     getPlatformColor(val) {
@@ -162,7 +209,11 @@ export const onboardingModule = {
                 meta: this.selectedMeta,
                 paymentPreference: this.selectedPayment,
                 theme: 'dark',
-                plataformas: platformsArray
+                plataformas: platformsArray,
+                // Nuevos campos
+                vehiculoTipo: this.selectedVehicleType,
+                vehiculoRelacion: this.selectedVehicleOwnership,
+                ciudad: this.selectedCity
             },
             analytics: {
                 totalJornadas: 0,
@@ -180,7 +231,7 @@ export const onboardingModule = {
                 settings: profileData.settings
             });
 
-            this.showStep(4);
+            this.showStep(6);
         } catch (error) {
             // console.error('Error guardando perfil:', error);
             alert('Hubo un error guardando tu perfil. Intenta de nuevo.');

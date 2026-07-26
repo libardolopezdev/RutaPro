@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rutapro-v43';
+const CACHE_NAME = 'rutapro-v44';
 
 const ASSETS = [
   './',
