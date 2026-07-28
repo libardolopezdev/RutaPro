@@ -637,15 +637,16 @@
                     style="font-size:28px; width: 100%;">
                 
                 <div>
-                    <span class="label-xs" style="margin-bottom:8px; display:block;">Categoría</span>
-                    <div id="gastoCategorias" style="display:flex; flex-wrap:wrap; gap:8px;">
-                        <button class="p-chip" data-id="combustible">Gasolina</button>
-                        <button class="p-chip" data-id="comida">Comida</button>
-                        <button class="p-chip" data-id="peaje">Peaje</button>
-                        <button class="p-chip" data-id="lavado">Lavado</button>
-                        <button class="p-chip" data-id="comision">Comisión</button>
-                        <button class="p-chip" data-id="otro">Otro</button>
-                    </div>
+                    <label for="categoriaGasto" class="form-label label-xs" style="margin-bottom:8px; display:block;">CATEGORÍA</label>
+                    <select id="categoriaGasto" class="custom-select">
+                        <option value="" disabled selected>Selecciona una categoría</option>
+                        <option value="combustible">Gasolina</option>
+                        <option value="comida">Comida</option>
+                        <option value="peaje">Peaje</option>
+                        <option value="lavado">Lavado</option>
+                        <option value="comision">Comisión</option>
+                        <option value="otro">Otro</option>
+                    </select>
                 </div>
             </div>
             <button class="btn-ultra btn-emerald" id="agregarGasto" disabled>AÑADIR GASTO</button>

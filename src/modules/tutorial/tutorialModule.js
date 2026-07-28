@@ -27,13 +27,24 @@ export const tutorialModule = {
     isActive: false,
 
     start(force = false) {
+        if (!force && localStorage.getItem('tutorialCompleted')) return;
+
         const state = store.getState();
         if (state.settings?.tutorialCompleted && !force) return;
 
         this.currentStepIndex = 0;
         this.isActive = true;
         
-        document.getElementById('tutorialOverlay').classList.add('active');
+        const overlay = document.getElementById('tutorialOverlay');
+        overlay.classList.add('active');
+
+        overlay.onclick = () => {
+            if (this.isActive) {
+                this.currentStepIndex++;
+                this.showStep();
+            }
+        };
+
         this.showStep();
     },
 
@@ -108,6 +119,8 @@ export const tutorialModule = {
         this.isActive = false;
         document.getElementById('tutorialOverlay').classList.remove('active');
         document.getElementById('tutorialTooltip').classList.remove('active');
+        
+        localStorage.setItem('tutorialCompleted', 'true');
         
         // Save state to Firebase
         const user = auth.currentUser;
