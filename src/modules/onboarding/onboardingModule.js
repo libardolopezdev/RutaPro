@@ -270,10 +270,13 @@ export const onboardingModule = {
         try {
             await firestoreService.createInitialProfile(user.uid, profileData);
             
-            // Re-hydrate store with new settings immediately
+            // Re-hydrate store con nueva config inmediatamente
             store.setState({ 
                 settings: profileData.settings
             });
+
+            // Persistencia ultra-robusta local por si firebase falla
+            localStorage.setItem('onboardingCompleted', 'true');
 
             this.showStep(6);
         } catch (error) {

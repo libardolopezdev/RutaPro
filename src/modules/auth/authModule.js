@@ -21,13 +21,14 @@ export const authModule = {
                 try {
                     // DETECT FIRST LOGIN OR PENDING ONBOARDING
                     const userProfile = await firestoreService.checkUserProfile(user.uid);
+                    const localCompleted = localStorage.getItem('onboardingCompleted') === 'true';
                     
-                    if (!userProfile) {
+                    if (!userProfile && !localCompleted) {
                         this.showOnboarding();
                         return; // Stop here, wait for onboarding to complete
                     }
                     
-                    if (userProfile.settings && userProfile.settings.onboardingCompleted === false) {
+                    if (userProfile && userProfile.settings && userProfile.settings.onboardingCompleted === false && !localCompleted) {
                         this.showOnboarding();
                         return; // Stop here, wait for onboarding to complete
                     }
@@ -174,6 +175,7 @@ export const authModule = {
                 jornadaIniciada: false,
                 jornadaInicio: null
             });
+            localStorage.removeItem('onboardingCompleted');
         }
     },
 
